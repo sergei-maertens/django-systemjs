@@ -6,6 +6,10 @@ import subprocess
 from .conf import settings
 
 
+class BundleError(OSError):
+    pass
+
+
 class System(object):
 
     def __init__(self, app, **opts):
@@ -38,8 +42,8 @@ class System(object):
                 result, err = proc.communicate()  # block until it's done
                 # TODO: do something with result/err
             except (IOError, OSError) as e:
-                raise OSError('Unable to apply %s (%r): %s' %
-                              (self.__class__.__name__, command, e))
+                raise BundleError('Unable to apply %s (%r): %s' %
+                                  (self.__class__.__name__, command, e))
         return rel_path
 
     @classmethod

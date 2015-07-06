@@ -4,6 +4,10 @@ import mock
 import os
 import io
 import shutil
+try:  # Py2
+    from StringIO import StringIO
+except ImportError:  # Py3
+    from io import StringIO
 
 from django.conf import settings
 from django.core.management import call_command
@@ -35,8 +39,8 @@ def _num_files(dir):
 class ManagementCommandTests(SimpleTestCase):
 
     def setUp(self):
-        self.out = io.StringIO()
-        self.err = io.StringIO()
+        self.out = StringIO()
+        self.err = StringIO()
 
     def tearDown(self):
         try:

@@ -6,7 +6,7 @@ import os
 from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 
-from systemjs.base import System
+from systemjs.base import System, BundleError
 from .helpers import mock_Popen
 
 
@@ -39,17 +39,20 @@ class BundleTests(SimpleTestCase):
         self.assertEqual(process_mock.communicate.call_count, 1)
 
     @mock.patch('subprocess.Popen')
-    def test_oserror_ioerror_caught(self, mock):
+    def test_oserror_caught(self, mock):
         def oserror():
-            raise OSError
-
-        def ioerror():
-            raise IOError
+            raise OSError('Error')
 
         mock_Popen(mock, side_effect=oserror)
-        with self.assertRaises(OSError):
+        with self.assertRaises(BundleError):
             System.bundle('app/dummy', force=True)
 
+    @mock.patch('subprocess.Popen')
+    def test_ioerror_caught(self, mock):
+
+        def ioerror():
+            raise IOError('Error')
+
         mock_Popen(mock, side_effect=ioerror)
-        with self.assertRaises(IOError):
+        with self.assertRaises(BundleError):
             System.bundle('app/dummy', force=True)

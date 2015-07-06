@@ -10,6 +10,7 @@ __pycache__
 .tox
 .coverage
 cover
+tests/static
 
 # docs
 docs/_build

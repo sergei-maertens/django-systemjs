@@ -13,7 +13,7 @@ from django.core.files.storage import FileSystemStorage
 from django.template.base import Lexer, TOKEN_BLOCK
 from django.template.loaders.app_directories import get_app_template_dirs
 
-from systemjs.templatetags.system_tags import System
+from systemjs.base import System
 
 
 SYSTEMJS_TAG_RE = re.compile(r"""systemjs_import\s+(['\"])(?P<app>.*)\1""")
@@ -94,15 +94,14 @@ class Command(BaseCommand):
         if self.post_process and hasattr(self.storage, 'post_process'):
             processor = self.storage.post_process(bundled_files, dry_run=False)
             for original_path, processed_path, processed in processor:
-                if isinstance(processed, Exception):
+                if isinstance(processed, Exception):  # pragma: no cover
                     self.stderr.write("Post-processing '%s' failed!" % original_path)
                     # Add a blank line before the traceback, otherwise it's
                     # too easy to miss the relevant part of the error message.
                     self.stderr.write("")
                     raise processed
-                if processed:
+                if processed:  # pragma: no cover
                     self.log("Post-processed '%s' as '%s'" %
                              (original_path, processed_path), level=1)
-                    # self.post_processed_files.append(original_path)
                 else:
-                    self.log("Skipped post-processing '%s'" % original_path)
+                    self.log("Skipped post-processing '%s'" % original_path)  # pragma: no cover

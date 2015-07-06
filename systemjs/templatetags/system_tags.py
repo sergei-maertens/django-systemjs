@@ -1,55 +1,12 @@
-import os
-import subprocess
+from __future__ import unicode_literals
 
 from django import template
 from django.contrib.staticfiles.storage import staticfiles_storage
 
 from systemjs.conf import settings
+from systemjs.base import System
 
 register = template.Library()
-
-
-class System(object):
-
-    def __init__(self, app, **opts):
-        self.app = app
-        self.opts = opts
-        self.stdout = self.stdin = self.stderr = subprocess.PIPE
-        self.cwd = None
-
-    def get_outfile(self):
-        self.js_file = u'{app}.js'.format(app=self.app)
-        outfile = os.path.join(settings.STATIC_ROOT, settings.SYSTEMJS_OUTPUT_DIR, self.js_file)
-        return outfile
-
-    def command(self, command):
-        """
-        Bundle the app and return the static url to the bundle.
-        """
-        outfile = self.get_outfile()
-        rel_path = os.path.relpath(outfile, settings.STATIC_ROOT)
-        check_existing = self.opts.get('check', False)
-        force = self.opts.get('force', False)
-        if force or (check_existing and not os.path.exists(outfile)):
-            options = self.opts.copy()
-            options.setdefault('jspm', settings.SYSTEMJS_JSPM_EXECUTABLE)
-            try:
-                cmd = command.format(app=self.app, outfile=outfile, **options)
-                proc = subprocess.Popen(
-                    cmd, shell=True, cwd=self.cwd, stdout=self.stdout,
-                    stdin=self.stdin, stderr=self.stderr)
-                result, err = proc.communicate()  # block until it's done
-                # TODO: do something with result/err
-            except (IOError, OSError) as e:
-                raise OSError('Unable to apply %s (%r): %s' %
-                              (self.__class__.__name__, command, e))
-        return rel_path
-
-    @classmethod
-    def bundle(cls, app, **opts):
-        system = cls(app, **opts)
-        cmd = u'{jspm} bundle-sfx {app} {outfile}'
-        return system.command(cmd)
 
 
 class SystemImportNode(template.Node):
@@ -75,7 +32,7 @@ class SystemImportNode(template.Node):
     def handle_token(cls, parser, token):
         bits = token.split_contents()
 
-        if len(bits) < 2:
+        if len(bits) != 2:
             raise template.TemplateSyntaxError(
                 "'%s' takes at least one argument (js module, without extension)" % bits[0])
 

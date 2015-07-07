@@ -8,6 +8,8 @@ Django SystemJS
 .. image:: https://coveralls.io/repos/sergei-maertens/django-systemjs/badge.svg
   :target: https://coveralls.io/r/sergei-maertens/django-systemjs
 
+.. image:: https://img.shields.io/pypi/v/django-systemjs.svg
+  :target: https://pypi.python.org/pypi/django-systemjs
 
 .. image:: https://readthedocs.org/projects/django-systemjs/badge/?version=latest
 ..  :target: https://readthedocs.org/projects/django-systemjs/?badge=latest

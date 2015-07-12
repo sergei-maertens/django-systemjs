@@ -54,7 +54,7 @@ With Django SystemJS you can replace this with::
     {% load system_tags %}
     <script src="/path/to/system.js"></script>
     <script src="/path/to/config.js"></script>
-    {% system_import 'my/awesome/app' %}
+    {% systemjs_import 'my/awesome/app' %}
 
 
 If `SYSTEMJS_ENABLED` is `False` (default value is `not DEBUG`),
@@ -71,7 +71,7 @@ Management command
 
 Django SystemJS comes with a management command to create all the
 bundles. It does so by checking all your template files and
-extracting the `{% system_import '...' %}` template tags.::
+extracting the `{% systemjs_import '...' %}` template tags.::
 
     python manage.py systemjs_bundle
 

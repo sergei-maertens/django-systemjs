@@ -48,11 +48,11 @@ def systemjs_import(parser, token):
 
     Syntax::
 
-        {% system_import 'path/to/file' %}
+        {% systemjs_import 'path/to/file' %}
 
     Example::
 
-        {% system_import 'mydjangoapp/js/myapp' %}
+        {% systemjs_import 'mydjangoapp/js/myapp' %}
 
     Which would be rendered like::
 

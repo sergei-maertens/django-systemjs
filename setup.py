@@ -42,7 +42,7 @@ setup(
     platforms=['any'],
     url='https://github.com/sergei-maertens/django-systemjs',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Framework :: Django :: 1.8',
         'Intended Audience :: Developers',
         'Operating System :: Unix',

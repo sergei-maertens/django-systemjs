@@ -32,7 +32,24 @@ class BundleTests(SimpleTestCase):
         # Bundle app/dummy
         System.bundle('app/dummy', force=True)
         self.assertEqual(mock_subproc_popen.call_count, 1)
-        command = mock_subproc_popen.call_args_list[0][0][0]
+        command = mock_subproc_popen.call_args[0][0]
+        outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/app/dummy.js')
+        self.assertEqual(command, 'jspm bundle app/dummy {0}'.format(outfile))
+
+        self.assertEqual(process_mock.communicate.call_count, 1)
+
+    @mock.patch('subprocess.Popen')
+    def test_bundlesfx_suprocess(self, mock_subproc_popen):
+        """
+        Test that bundling calls the correct subprocess command
+        """
+        # mock Popen/communicate
+        process_mock = mock_Popen(mock_subproc_popen)
+
+        # Bundle app/dummy
+        System.bundle('app/dummy', sfx=True, force=True)
+        self.assertEqual(mock_subproc_popen.call_count, 1)
+        command = mock_subproc_popen.call_args[0][0]
         outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/app/dummy.js')
         self.assertEqual(command, 'jspm bundle-sfx app/dummy {0}'.format(outfile))
 

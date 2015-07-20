@@ -62,6 +62,16 @@ class ManagementCommandTests(SimpleTestCase):
         self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
         self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True))
 
+    def test_sfx_option(self, bundle_mock):
+        bundle_mock.side_effect = _bundle
+
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        call_command('systemjs_bundle', '--sfx', stdout=self.out, stderr=self.err)
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
+
+        self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=True))
+
     @override_settings(TEMPLATES=JINJA_TEMPLATES)
     def test_different_backend(self, bundle_mock):
         bundle_mock.side_effect = _bundle

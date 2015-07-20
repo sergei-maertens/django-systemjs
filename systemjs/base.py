@@ -47,7 +47,8 @@ class System(object):
         return rel_path
 
     @classmethod
-    def bundle(cls, app, **opts):
+    def bundle(cls, app, sfx=False, **opts):
         system = cls(app, **opts)
-        cmd = u'{jspm} bundle-sfx {app} {outfile}'
+        bundle_cmd = 'bundle-sfx' if sfx else 'bundle'
+        cmd = u'{jspm} ' + bundle_cmd + ' {app} {outfile}'
         return system.command(cmd)

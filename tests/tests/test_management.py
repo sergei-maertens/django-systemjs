@@ -60,7 +60,7 @@ class ManagementCommandTests(SimpleTestCase):
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
 
         self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False))
 
     def test_sfx_option(self, bundle_mock):
         bundle_mock.side_effect = _bundle
@@ -82,7 +82,7 @@ class ManagementCommandTests(SimpleTestCase):
 
         self.assertEqual(bundle_mock.call_count, 1)  # we only support vanilla templates
         # as opposed to app/dummy2
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False))
 
     @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.CachedStaticFilesStorage')
     def test_post_process(self, bundle_mock):

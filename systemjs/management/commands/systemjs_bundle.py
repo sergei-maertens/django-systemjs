@@ -32,6 +32,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            '--sfx',
+            action='store_true', dest='sfx',
+            help="Generate self-executing bundles.")
+        parser.add_argument(
             '--extension', '-e', dest='extensions',
             help='The file extension(s) to examine (default: "html"). Separate '
                  'multiple extensions with commas, or use -e multiple times.',
@@ -88,7 +92,7 @@ class Command(BaseCommand):
         bundled_files = OrderedDict()
         storage = FileSystemStorage(settings.STATIC_ROOT, base_url=settings.STATIC_URL)
         for app in all_apps:
-            rel_path = System.bundle(app, force=True)
+            rel_path = System.bundle(app, force=True, sfx=options.get('sfx'))
             bundled_files[rel_path] = (storage, rel_path)
 
         if self.post_process and hasattr(self.storage, 'post_process'):

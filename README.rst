@@ -80,7 +80,7 @@ By default it will look at all templates in your app directories, and
 additionally the additional template dirs for the vanilla Django
 template engine.
 
-note::
+.. note::
 
     Default bundling mechanism changed in 0.2. Before 0.2, all bundles would
     by default be created as self-executing (`jspm bundle-sfx <app>`). This

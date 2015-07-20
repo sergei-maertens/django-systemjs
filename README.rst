@@ -80,6 +80,24 @@ By default it will look at all templates in your app directories, and
 additionally the additional template dirs for the vanilla Django
 template engine.
 
+note::
+
+    Default bundling mechanism changed in 0.2. Before 0.2, all bundles would
+    by default be created as self-executing (`jspm bundle-sfx <app>`). This
+    was changed to the default `jspm bundle <app>` command. Self-executing
+    bundles include the entire SystemJS library and your `config.js`, leading
+    to 1MB+ bundle files. This is painfull if you have multiple bundles.
+
+    A better strategy is to leverage the JSPM CDN (see jspm docs), and then
+    don't forget to include your `config.js` (which you would probably do in
+    development mode anyway).
+
+    Self-executing bundles can still be generated with the `--sfx` management
+    command option::
+
+        python manage.py systemjs_bundle --sfx
+
+
 Example workflow
 ----------------
 Django SystemJS is designed as a non-intrusive library in development mode,

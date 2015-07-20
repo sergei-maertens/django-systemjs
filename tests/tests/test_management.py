@@ -104,3 +104,19 @@ class ManagementCommandTests(SimpleTestCase):
         # created one file + skipped post processing
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
         self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made
+
+
+class FailedBundleTests(SimpleTestCase):
+
+    def setUp(self):
+        self.out = StringIO()
+        self.err = StringIO()
+
+    @override_settings(SYSTEMJS_JSPM_EXECUTABLE='gibberish')
+    def test_bundle_failed(self):
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        call_command('systemjs_bundle', '--sfx', stdout=self.out, stderr=self.err)
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+
+        self.err.seek(0)
+        self.assertEqual(self.err.read(), 'Could not bundle app/dummy\n')

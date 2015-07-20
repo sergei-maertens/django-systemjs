@@ -93,6 +93,11 @@ class Command(BaseCommand):
         storage = FileSystemStorage(settings.STATIC_ROOT, base_url=settings.STATIC_URL)
         for app in all_apps:
             rel_path = System.bundle(app, force=True, sfx=options.get('sfx'))
+            outfile = os.path.join(settings.STATIC_ROOT, rel_path)
+            if not os.path.exists(outfile):
+                self.stderr.write('Could not bundle {app}'.format(app=app))
+            else:
+                self.stdout.write('Bundled {app} into {out}'.format(app=app, out=rel_path))
             bundled_files[rel_path] = (storage, rel_path)
 
         if self.post_process and hasattr(self.storage, 'post_process'):

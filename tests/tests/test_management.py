@@ -45,7 +45,7 @@ class ManagementCommandTests(SimpleTestCase):
     def tearDown(self):
         try:
             shutil.rmtree(settings.STATIC_ROOT)
-        except (FileNotFoundError, IOError):
+        except (OSError, IOError):
             pass
 
     def test_no_arguments(self, bundle_mock):

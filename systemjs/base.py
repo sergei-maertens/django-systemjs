@@ -17,6 +17,7 @@ class System(object):
         self.opts = opts
         self.stdout = self.stdin = self.stderr = subprocess.PIPE
         self.cwd = None
+        self.sfx = opts.pop('sfx', False)
 
     def get_outfile(self):
         self.js_file = u'{app}.js'.format(app=self.app)
@@ -44,11 +45,16 @@ class System(object):
             except (IOError, OSError) as e:
                 raise BundleError('Unable to apply %s (%r): %s' %
                                   (self.__class__.__name__, command, e))
+            else:
+                if not self.sfx:
+                    # add the import statement, which is missing for non-sfx bundles
+                    with open(outfile, 'w') as of:
+                        of.write("\nSystem.import('{app}');\n".format(app=self.app))
         return rel_path
 
     @classmethod
     def bundle(cls, app, sfx=False, **opts):
-        system = cls(app, **opts)
+        system = cls(app, sfx=sfx, **opts)
         bundle_cmd = 'bundle-sfx' if sfx else 'bundle'
         cmd = u'{jspm} ' + bundle_cmd + ' {app} {outfile}'
         return system.command(cmd)

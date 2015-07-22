@@ -48,7 +48,7 @@ class System(object):
             else:
                 if not self.sfx:
                     # add the import statement, which is missing for non-sfx bundles
-                    with open(outfile, 'w') as of:
+                    with open(outfile, 'a') as of:
                         of.write("\nSystem.import('{app}');\n".format(app=self.app))
         return rel_path
 

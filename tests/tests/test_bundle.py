@@ -51,7 +51,8 @@ class BundleTests(SimpleTestCase):
         self.assertEqual(command, 'jspm bundle {0} {1}'.format(app_name, outfile))
 
         with open(outfile, 'r') as of:
-            self.assertEqual(of.read(), "\nSystem.import('app/dummy');\n")
+            js = of.read()
+        self.assertEqual(js, "alert('foo')\nSystem.import('app/dummy');\n")
 
         self.assertEqual(process_mock.communicate.call_count, 1)
 

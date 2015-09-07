@@ -23,7 +23,7 @@ class TemplateTagTests(SimpleTestCase):
     @override_settings(SYSTEMJS_ENABLED=False)
     def test_debug(self):
         rendered = self._render()
-        self.assertEqual(rendered, """<script type="text/javascript">System.import('myapp/main');</script>""")
+        self.assertEqual(rendered, """<script type="text/javascript">System.import('myapp/main.js');</script>""")
 
     @override_settings(SYSTEMJS_OUTPUT_DIR='SJ')
     def test_normal(self):

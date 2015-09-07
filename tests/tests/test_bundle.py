@@ -52,7 +52,7 @@ class BundleTests(SimpleTestCase):
 
         with open(outfile, 'r') as of:
             js = of.read()
-        self.assertEqual(js, "alert('foo')\nSystem.import('app/dummy');\n")
+        self.assertEqual(js, "alert('foo')\nSystem.import('app/dummy.js');\n")
 
         self.assertEqual(process_mock.communicate.call_count, 1)
 

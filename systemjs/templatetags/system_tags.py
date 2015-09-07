@@ -20,7 +20,7 @@ class SystemImportNode(template.Node):
         """
         module_path = self.path.resolve(context)
         if not settings.SYSTEMJS_ENABLED:
-            tpl = """<script type="text/javascript">System.import('{app}');</script>"""
+            tpl = """<script type="text/javascript">System.import('{app}.js');</script>"""
             return tpl.format(app=module_path)
 
         # else: create a bundle
@@ -62,7 +62,7 @@ def systemjs_import(parser, token):
 
     In DEBUG mode, the result would be
 
-        <script type="text/javascript">System.import('mydjangoapp/js/myapp');</script>
+        <script type="text/javascript">System.import('mydjangoapp/js/myapp.js');</script>
     """
 
     return SystemImportNode.handle_token(parser, token)

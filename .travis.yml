@@ -1,6 +1,12 @@
 language: python
 install:
   - pip install coverage coveralls tox
+addons:
+  apt:
+    sources:
+      - deadsnakes
+    packages:
+      - python3.5
 script:
   - tox
 after_success:

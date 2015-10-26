@@ -91,3 +91,47 @@ class BundleTests(SimpleTestCase):
         mock_Popen(mock, side_effect=ioerror)
         with self.assertRaises(BundleError):
             System.bundle('app/dummy', force=True)
+
+
+class JSPMIntegrationTests(SimpleTestCase):
+
+    @mock.patch('subprocess.Popen')
+    def test_jspm_version_suprocess(self, mock_subproc_popen):
+        """
+        Test that JSPM version discovery works.
+        """
+        # mock Popen/communicate
+        return_value = (b'0.15.7\nRunning against global jspm install.\n', '')
+        process_mock = mock_Popen(mock_subproc_popen, return_value=return_value)
+
+        system = System('app/dummy')
+
+        # Call version
+        version = system.get_jspm_version({'jspm': 'jspm'})
+        self.assertEqual(mock_subproc_popen.call_count, 1)
+        self.assertEqual(version, (0, 15, 7))
+
+        command = mock_subproc_popen.call_args[0][0]
+        self.assertEqual(command, 'jspm --version')
+        self.assertEqual(process_mock.communicate.call_count, 1)
+
+    @mock.patch('subprocess.Popen')
+    def test_jspm_version_suprocess_error(self, mock_subproc_popen):
+        """
+        Test that bundling calls the correct subprocess command
+        """
+        # mock Popen/communicate
+        return_value = (b'gibberish', 'a jspm error')
+        process_mock = mock_Popen(mock_subproc_popen, return_value=return_value)
+
+        system = System('app/dummy')
+
+        # Call version
+        with self.assertRaises(BundleError):
+            system.get_jspm_version({'jspm': 'jspm'})
+
+        self.assertEqual(mock_subproc_popen.call_count, 1)
+
+        command = mock_subproc_popen.call_args[0][0]
+        self.assertEqual(command, 'jspm --verssion')
+        self.assertEqual(process_mock.communicate.call_count, 1)

@@ -1,9 +1,15 @@
 from __future__ import unicode_literals
 
+import logging
 import os
 import subprocess
 
 from .conf import settings
+
+
+JSPM_LOG_VERSION = (0, 16, 3)
+
+logger = logging.getLogger(__name__)
 
 
 class BundleError(OSError):
@@ -18,11 +24,27 @@ class System(object):
         self.stdout = self.stdin = self.stderr = subprocess.PIPE
         self.cwd = None
         self.sfx = opts.pop('sfx', False)
+        self.version = None  # JSPM version
+
+    def _has_jspm_log(self):
+        return self.version and self.version >= JSPM_LOG_VERSION
 
     def get_outfile(self):
         self.js_file = u'{app}.js'.format(app=self.app)
         outfile = os.path.join(settings.STATIC_ROOT, settings.SYSTEMJS_OUTPUT_DIR, self.js_file)
         return outfile
+
+    def get_jspm_version(self, opts):
+        jspm_bin = opts['jspm']
+        cmd = '{} --version'.format(jspm_bin)
+        proc = subprocess.Popen(
+            cmd, shell=True, cwd=self.cwd, stdout=self.stdout,
+            stdin=self.stdin, stderr=self.stderr)
+        result, err = proc.communicate()  # block until it's done
+        if err:
+            raise BundleError("Could not determine JSPM version, error: %s", err)
+        version_string = result.split()[0].decode()
+        return tuple([int(x) for x in version_string.split('.')])
 
     def command(self, command):
         """
@@ -35,16 +57,30 @@ class System(object):
         if force or (check_existing and not os.path.exists(outfile)):
             options = self.opts.copy()
             options.setdefault('jspm', settings.SYSTEMJS_JSPM_EXECUTABLE)
+            if not self.version:
+                self.version = self.get_jspm_version(options)
             try:
+                if self._has_jspm_log():
+                    command += ' --log={log}'
+                    options.setdefault('log', 'err')
+
                 cmd = command.format(app=self.app, outfile=outfile, **options)
                 proc = subprocess.Popen(
                     cmd, shell=True, cwd=self.cwd, stdout=self.stdout,
                     stdin=self.stdin, stderr=self.stderr)
+
                 result, err = proc.communicate()  # block until it's done
-                # TODO: do something with result/err
+                if err and self._has_jspm_log():
+                    fmt = 'Could not bundle \'%s\': \n%s'
+                    logger.warn(fmt, self.app, err)
+                    raise BundleError(fmt % (self.app, err))
+                if result:
+                    logger.info(result)
             except (IOError, OSError) as e:
-                raise BundleError('Unable to apply %s (%r): %s' %
-                                  (self.__class__.__name__, command, e))
+                if isinstance(e, BundleError):
+                    raise
+                raise BundleError('Unable to apply %s (%r): %s' % (
+                                  self.__class__.__name__, cmd, e))
             else:
                 if not self.sfx:
                     # add the import statement, which is missing for non-sfx bundles

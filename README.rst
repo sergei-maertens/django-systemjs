@@ -24,7 +24,7 @@ and ties in perfectly with `django.contrib.staticfiles`.
 Installation
 ------------
 You will need to add 'systemjs' to your `INSTALLED_APPS` to be able
-to use the templetag and management command.
+to use the templatetag and management command.
 
 JSPM has to be installed and configured correctly - you will need npm for
 that. Refer to the JSPM installation documentation.
@@ -125,6 +125,19 @@ proposed `config.js`) jspm will look for the modules in `STATIC_ROOT`.::
     python manage.py systemjs_bundle
 
 That's it! It should work!
+
+Available settings
+------------------
+
+`SYSTEMJS_ENABLED`: defaults to `not settings.DEBUG`. If disabled, the loading
+of modules will happen in the 'standard' jspm way.
+
+`SYSTEMJS_JSPM_EXECUTABLE`: path to the `jspm-cli` executable. Defaults to
+`jspm`, which should be available if installed globally with `npm`.
+
+`SYSTEMJS_OUTPUT_DIR`: name of the subdirectory within `settings.STATIC_ROOT`.
+Bundled files will end up in this directory, and this is the place the
+templatetag will point static files to.
 
 Contact
 -------

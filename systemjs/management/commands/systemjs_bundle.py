@@ -10,10 +10,11 @@ from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.management.base import BaseCommand
 from django.core.management.utils import handle_extensions
 from django.core.files.storage import FileSystemStorage
-from django.template.base import Lexer, TOKEN_BLOCK
+from django.template.base import TOKEN_BLOCK
 from django.template.loaders.app_directories import get_app_template_dirs
 
 from systemjs.base import System
+from systemjs.compat import Lexer
 
 
 SYSTEMJS_TAG_RE = re.compile(r"""systemjs_import\s+(['\"])(?P<app>.*)\1""")
@@ -83,7 +84,7 @@ class Command(BaseCommand):
             with io.open(fp, 'r', encoding=settings.FILE_CHARSET) as template_file:
                 src_data = template_file.read()
 
-            for t in Lexer(src_data, None).tokenize():
+            for t in Lexer(src_data).tokenize():
                 if t.token_type == TOKEN_BLOCK:
                     imatch = SYSTEMJS_TAG_RE.match(t.contents)
                     if imatch:

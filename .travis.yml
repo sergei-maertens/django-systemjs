@@ -1,10 +1,23 @@
 language: python
 install:
   - pip install coverage coveralls tox
+addons:
+  apt:
+    sources:
+      - deadsnakes
+    packages:
+      - python3.5
 script:
   - tox
 after_success:
   - coveralls
 env:
-  - TOXENV=py27-1.8
-  - TOXENV=py34-1.8
+  - TOXENV=py27-django18
+  - TOXENV=py27-django19
+  - TOXENV=pypy-django18
+  - TOXENV=pypy-django19
+  - TOXENV=py33-django18
+  - TOXENV=py34-django18
+  - TOXENV=py34-django19
+  - TOXENV=py35-django18
+  - TOXENV=py35-django19

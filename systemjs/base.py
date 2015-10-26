@@ -1,9 +1,15 @@
 from __future__ import unicode_literals
 
+import logging
 import os
 import subprocess
 
 from .conf import settings
+
+
+JSPM_LOG_VERSION = (0, 16, 0)
+
+logger = logging.getLogger(__name__)
 
 
 class BundleError(OSError):
@@ -19,6 +25,9 @@ class System(object):
         self.cwd = None
         self.sfx = opts.pop('sfx', False)
         self.version = None  # JSPM version
+
+    def _has_jspm_log(self):
+        return self.version and self.version >= JSPM_LOG_VERSION
 
     def get_outfile(self):
         self.js_file = u'{app}.js'.format(app=self.app)
@@ -51,18 +60,27 @@ class System(object):
             if not self.version:
                 self.version = self.get_jspm_version(options)
             try:
-                if self.version >= (0, 16):
-                    command += ' --log {log}'
+                if self._has_jspm_log():
+                    command += ' --log={log}'
                     options.setdefault('log', 'err')
+
                 cmd = command.format(app=self.app, outfile=outfile, **options)
                 proc = subprocess.Popen(
                     cmd, shell=True, cwd=self.cwd, stdout=self.stdout,
                     stdin=self.stdin, stderr=self.stderr)
+
                 result, err = proc.communicate()  # block until it's done
-                # TODO: do something with result/err
+                if err and self._has_jspm_log():
+                    fmt = 'Could not bundle \'%s\': \n%s'
+                    logger.warn(fmt, self.app, err)
+                    raise BundleError(fmt % (self.app, err))
+                if result:
+                    logger.info(result)
             except (IOError, OSError) as e:
-                raise BundleError('Unable to apply %s (%r): %s',
-                                  self.__class__.__name__, command, e)
+                if isinstance(e, BundleError):
+                    raise
+                raise BundleError('Unable to apply %s (%r): %s' % (
+                                  self.__class__.__name__, cmd, e))
             else:
                 if not self.sfx:
                     # add the import statement, which is missing for non-sfx bundles

@@ -113,7 +113,10 @@ class FailedBundleTests(SimpleTestCase):
         self.err = StringIO()
 
     @override_settings(SYSTEMJS_JSPM_EXECUTABLE='gibberish')
-    def test_bundle_failed(self):
+    @mock.patch('systemjs.base.System.get_jspm_version')
+    def test_bundle_failed(self, mock):
+        mock.return_value = (0, 15, 0)
+
         self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
         call_command('systemjs_bundle', '--sfx', stdout=self.out, stderr=self.err)
         self.assertEqual(_num_files(settings.STATIC_ROOT), 0)

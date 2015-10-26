@@ -14,7 +14,15 @@ from .test_management import _bundle
 
 class BundleTests(SimpleTestCase):
 
+    def setUp(self):
+        super(BundleTests, self).setUp()
+        self.patcher = mock.patch.object(System, 'get_jspm_version')
+        mocked = self.patcher.start()
+        mocked.return_value = (0, 15, 0)
+
     def tearDown(self):
+        super(BundleTests, self).tearDown()
+        self.patcher.stop()
         try:
             shutil.rmtree(settings.STATIC_ROOT)
         except (OSError, IOError):
@@ -133,5 +141,5 @@ class JSPMIntegrationTests(SimpleTestCase):
         self.assertEqual(mock_subproc_popen.call_count, 1)
 
         command = mock_subproc_popen.call_args[0][0]
-        self.assertEqual(command, 'jspm --verssion')
+        self.assertEqual(command, 'jspm --version')
         self.assertEqual(process_mock.communicate.call_count, 1)

@@ -41,8 +41,12 @@ class ManagementCommandTests(SimpleTestCase):
     def setUp(self):
         self.out = StringIO()
         self.err = StringIO()
+        self._clear_static()
 
     def tearDown(self):
+        self._clear_static()
+
+    def _clear_static(self):
         try:
             shutil.rmtree(settings.STATIC_ROOT)
         except (OSError, IOError):
@@ -112,6 +116,11 @@ class FailedBundleTests(SimpleTestCase):
         self.out = StringIO()
         self.err = StringIO()
 
+        try:
+            shutil.rmtree(settings.STATIC_ROOT)
+        except (OSError, IOError):
+            pass
+
     @override_settings(SYSTEMJS_JSPM_EXECUTABLE='gibberish')
     @mock.patch('systemjs.base.System.get_jspm_version')
     def test_bundle_failed(self, mock):
@@ -119,6 +128,7 @@ class FailedBundleTests(SimpleTestCase):
 
         self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
         call_command('systemjs_bundle', '--sfx', stdout=self.out, stderr=self.err)
+
         self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
 
         self.err.seek(0)

@@ -24,6 +24,7 @@ class BundleTests(SimpleTestCase):
     def tearDown(self):
         super(BundleTests, self).tearDown()
         self.patcher.stop()
+
         try:
             shutil.rmtree(settings.STATIC_ROOT)
         except (OSError, IOError):

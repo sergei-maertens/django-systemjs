@@ -7,7 +7,7 @@ import subprocess
 from .conf import settings
 
 
-JSPM_LOG_VERSION = (0, 16, 0)
+JSPM_LOG_VERSION = (0, 16, 3)
 
 logger = logging.getLogger(__name__)
 

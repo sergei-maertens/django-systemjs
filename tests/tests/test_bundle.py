@@ -155,7 +155,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         JSPM > 0.16.0 has the --log option that surpresses levels of
         output.
         """
-        mock_version.return_value = (0, 16, 0)
+        mock_version.return_value = (0, 16, 3)
 
         app_name = 'app/dummy'
 
@@ -197,7 +197,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         JSPM > 0.16.0 has the --log option that surpresses levels of
         output.
         """
-        mock_version.return_value = (0, 16, 0)
+        mock_version.return_value = (0, 16, 3)
 
         app_name = 'app/dummy'
 

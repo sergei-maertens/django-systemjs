@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.3.2
+-----
+Fixed incorrect passing of the --log option.
+
 0.3.1
 -----
 

@@ -176,7 +176,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         self.assertEqual(
             command,
             mock.call(
-                'jspm bundle {0} {1} --log=err'.format(app_name, outfile),
+                'jspm bundle {0} {1} --log err'.format(app_name, outfile),
                 stderr=subprocess.PIPE, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
                 shell=True, cwd=None
             )

@@ -61,7 +61,7 @@ class System(object):
                 self.version = self.get_jspm_version(options)
             try:
                 if self._has_jspm_log():
-                    command += ' --log={log}'
+                    command += ' --log {log}'
                     options.setdefault('log', 'err')
 
                 cmd = command.format(app=self.app, outfile=outfile, **options)

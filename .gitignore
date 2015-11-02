@@ -5,6 +5,7 @@ __pycache__
 /dist
 .eggs
 *.egg-info
+/build
 
 # tests
 .tox

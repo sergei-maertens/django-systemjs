@@ -28,3 +28,23 @@ def parse_package_json():
     with open(locate_package_json()) as pjson:
         data = json.loads(pjson.read())
     return data
+
+
+def find_systemjs_location():
+    """
+    Figure out where `jspm_packages/system.js` will be put by JSPM.
+    """
+    location = os.path.abspath(os.path.dirname(locate_package_json()))
+    conf = parse_package_json()
+    if 'jspm' in conf:
+        conf = conf['jspm']
+
+    try:
+        conf = conf['directories']
+    except KeyError:
+        raise KeyError("The `directories` configuarion was not found in package.json. "
+                       "Please check your jspm install and/or configuarion.")
+
+    # check for explicit location, else fall back to the default as jspm does
+    jspm_packages = conf['packages'] if 'packages' in conf else 'jspm_packages'
+    return os.path.join(location, jspm_packages, 'system.js')

@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
 
-from systemjs.jspm import locate_package_json, parse_package_json
+from systemjs.jspm import find_systemjs_location,locate_package_json, parse_package_json
 
 
 overridden_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'files'))
@@ -58,3 +58,30 @@ class PackageJsonTests(SimpleTestCase):
                 "baseURL": "static",
             }
         })
+
+    @override_settings(STATIC_ROOT=overridden_path)
+    @mock.patch('systemjs.jspm.locate_package_json')
+    def test_nested_jspm_extract(self, mock):
+        """
+        JSPM has an option to nest all configuration in package.json in some
+        sort of 'jspm' namespace. Test that is dealt with accordingly.
+        """
+        mock.return_value = nested
+
+        location = find_systemjs_location()
+        expected_location = os.path.join(settings.STATIC_ROOT, 'jspm', 'system.js')
+        self.assertEqual(location, expected_location)
+
+    @override_settings(STATIC_ROOT=overridden_path)
+    @mock.patch('systemjs.jspm.locate_package_json')
+    def test_non_nested_jspm_extract(self, mock):
+        """
+        JSPM has an option to nest all configuration in package.json in some
+        sort of 'jspm' namespace. Test that is dealt with accordingly if the
+        config is not namespaced.
+        """
+        mock.return_value = simple
+
+        location = find_systemjs_location()
+        expected_location = os.path.join(settings.STATIC_ROOT, 'jspm_packages', 'system.js')
+        self.assertEqual(location, expected_location)

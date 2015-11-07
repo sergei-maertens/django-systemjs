@@ -91,6 +91,7 @@ class Command(BaseCommand):
                         all_apps.append(imatch.group('app'))
 
         bundled_files = OrderedDict()
+        # note: this should be configurable, if people use S3BotoStorage for example, it needs to end up there
         storage = FileSystemStorage(settings.STATIC_ROOT, base_url=settings.STATIC_URL)
         for app in all_apps:
             rel_path = System.bundle(app, force=True, sfx=options.get('sfx'))

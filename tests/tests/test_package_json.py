@@ -11,7 +11,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
 
-from systemjs.jspm import find_systemjs_location,locate_package_json, parse_package_json
+from systemjs.jspm import find_systemjs_location, locate_package_json, parse_package_json
 
 
 overridden_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'files'))
@@ -85,3 +85,19 @@ class PackageJsonTests(SimpleTestCase):
         location = find_systemjs_location()
         expected_location = os.path.join(settings.STATIC_ROOT, 'jspm_packages', 'system.js')
         self.assertEqual(location, expected_location)
+
+    @mock.patch('systemjs.jspm.parse_package_json')
+    def test_invalid_package_json(self, mock):
+        mock.return_value = 'I am invalid'
+
+        with self.assertRaises(ImproperlyConfigured):
+            find_systemjs_location()
+
+    @mock.patch('systemjs.jspm.parse_package_json')
+    def test_invalid_package_json2(self, mock):
+        mock.return_value = {
+            "name": "I am invalid"
+        }
+
+        with self.assertRaises(ImproperlyConfigured):
+            find_systemjs_location()

@@ -41,9 +41,13 @@ def find_systemjs_location():
 
     try:
         conf = conf['directories']
+    except TypeError:
+        raise ImproperlyConfigured("`package.json` doesn't appear to be a valid json object. "
+                                   "Location: %s" % location)
     except KeyError:
-        raise KeyError("The `directories` configuarion was not found in package.json. "
-                       "Please check your jspm install and/or configuarion.")
+        raise ImproperlyConfigured("The `directories` configuarion was not found in package.json. "
+                                   "Please check your jspm install and/or configuarion. `package.json` "
+                                   "location: %s" % location)
 
     # check for explicit location, else fall back to the default as jspm does
     jspm_packages = conf['packages'] if 'packages' in conf else 'jspm_packages'

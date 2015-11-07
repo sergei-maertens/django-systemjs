@@ -1,4 +1,5 @@
 import os
+import json
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -20,8 +21,10 @@ def locate_package_json():
     return path
 
 
-def parse_jspm_from_package_json():
+def parse_package_json():
     """
     Extract the JSPM configuration from package.json.
     """
-    import bpdb; bpdb.set_trace()
+    with open(locate_package_json()) as pjson:
+        data = json.loads(pjson.read())
+    return data

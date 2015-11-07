@@ -4,16 +4,20 @@ relevant information.
 """
 from __future__ import unicode_literals
 
+import mock
 import os
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.test import SimpleTestCase, override_settings
 
-from systemjs.jspm import locate_package_json, parse_jspm_from_package_json
+from systemjs.jspm import locate_package_json, parse_package_json
 
 
 overridden_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'files'))
+
+simple = os.path.join(overridden_path, 'simple_package.json')
+nested = os.path.join(overridden_path, 'jspm_nested_package.json')
 
 
 class PackageJsonTests(SimpleTestCase):
@@ -38,3 +42,19 @@ class PackageJsonTests(SimpleTestCase):
     def test_invalid_dir(self):
         with self.assertRaises(ImproperlyConfigured):
             locate_package_json()
+
+    @mock.patch('systemjs.jspm.locate_package_json')
+    def test_read_package_json(self, mock):
+        """
+        Test that package.json correctly gets loaded as JSON into a dict.
+        """
+        # return a simple json blob path
+        mock.return_value = simple
+
+        data = parse_package_json()
+        self.assertEqual(data, {
+            "name": "dummy",
+            "directories": {
+                "baseURL": "static",
+            }
+        })

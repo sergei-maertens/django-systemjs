@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.test import SimpleTestCase, override_settings
 
+
 JINJA_TEMPLATES = [{
     'BACKEND': 'django.template.backends.jinja2.Jinja2',
     'DIRS': [
@@ -35,13 +36,7 @@ def _num_files(dir):
     return sum([len(files) for r, d, files in os.walk(dir)])
 
 
-@mock.patch('systemjs.base.System.bundle')
-class ManagementCommandTests(SimpleTestCase):
-
-    def setUp(self):
-        self.out = StringIO()
-        self.err = StringIO()
-        self._clear_static()
+class ClearStaticMixin(object):
 
     def tearDown(self):
         self._clear_static()
@@ -51,6 +46,29 @@ class ManagementCommandTests(SimpleTestCase):
             shutil.rmtree(settings.STATIC_ROOT)
         except (OSError, IOError):
             pass
+
+
+class MockFindSystemJSLocation(object):
+
+    def setUp(self):
+        super(MockFindSystemJSLocation, self).setUp()
+        self.patcher = mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+        self.mock = self.patcher.start()
+        self.mock.return_value = '/dummy/path/system.js'
+
+    def tearDown(self):
+        super(MockFindSystemJSLocation, self).tearDown()
+        self.patcher.stop()
+
+
+@mock.patch('systemjs.base.System.bundle')
+class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleTestCase):
+
+    def setUp(self):
+        super(ManagementCommandTests, self).setUp()
+        self.out = StringIO()
+        self.err = StringIO()
+        self._clear_static()
 
     def test_no_arguments(self, bundle_mock):
         """
@@ -110,16 +128,14 @@ class ManagementCommandTests(SimpleTestCase):
         self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made
 
 
-class FailedBundleTests(SimpleTestCase):
+class FailedBundleTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleTestCase):
 
     def setUp(self):
+        super(FailedBundleTests, self).setUp()
         self.out = StringIO()
         self.err = StringIO()
 
-        try:
-            shutil.rmtree(settings.STATIC_ROOT)
-        except (OSError, IOError):
-            pass
+        self._clear_static()
 
     @override_settings(SYSTEMJS_JSPM_EXECUTABLE='gibberish')
     @mock.patch('systemjs.base.System.get_jspm_version')
@@ -133,3 +149,62 @@ class FailedBundleTests(SimpleTestCase):
 
         self.err.seek(0)
         self.assertEqual(self.err.read(), 'Could not bundle app/dummy\n')
+
+
+@override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.CachedStaticFilesStorage')
+@mock.patch('systemjs.base.System.bundle')
+class PostProcessSystemJSTests(ClearStaticMixin, SimpleTestCase):
+
+    """
+    Test that `system.js` is post processed as well if it resides
+    inside settings.STATIC_ROOT.
+    """
+
+    def setUp(self):
+        super(PostProcessSystemJSTests, self).setUp()
+
+        self.out = StringIO()
+        self.err = StringIO()
+        self._clear_static()
+
+    def write_systemjs(self):
+        basedir = os.path.abspath(os.path.join(settings.STATIC_ROOT, 'jspm_packages'))
+        self.systemjs_location = os.path.join(basedir, 'system.js')
+        if not os.path.exists(basedir):
+            os.makedirs(basedir)
+
+        # put a dummy system.js in place
+        with open(self.systemjs_location, 'w') as of:
+            of.write('alert("I am system.js");')
+
+    @mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+    def test_systemjs_outside_of_static_root(self, systemjs_mock, bundle_mock):
+        """
+        If `system.js` is not inside of settings.STATIC_ROOT, it
+        should not get post-processed explicitly as collectstatic does this.
+        """
+        bundle_mock.side_effect = _bundle
+        # patch the location to outside of settings.STATIC_ROOT
+        systemjs_mock.return_value = '/non/existant/path'
+
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        call_command('systemjs_bundle', stdout=self.out, stderr=self.err)
+        # created one file + did post processing
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 2)
+        self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made
+
+    @mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+    def test_systemjs_inside_static_root(self, systemjs_mock, bundle_mock):
+        """
+        See issue #5: if jspm installs directly into settings.STATIC_ROOT,
+        with the CachedStaticFilesStorage, the `system.js` file is not post-processed.
+        """
+        bundle_mock.side_effect = _bundle
+        self.write_systemjs()
+        systemjs_mock.return_value = self.systemjs_location
+
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
+        call_command('systemjs_bundle', stdout=self.out, stderr=self.err)
+        # system.js exists + created one file + did post processing for both
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 4)
+        self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made

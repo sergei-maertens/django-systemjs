@@ -1,0 +1,6 @@
+{
+  "name": "dummy",
+  "directories": {
+    "baseURL": "static"
+  }
+}

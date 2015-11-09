@@ -142,6 +142,7 @@ class FailedBundleTests(SimpleTestCase):
 @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.CachedStaticFilesStorage')
 @mock.patch('systemjs.base.System.bundle')
 class PostProcessSystemJSTests(ClearStaticMixin, SimpleTestCase):
+
     """
     Test that `system.js` is post processed as well if it resides
     inside settings.STATIC_ROOT.

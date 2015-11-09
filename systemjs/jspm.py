@@ -36,6 +36,7 @@ def find_systemjs_location():
     """
     location = os.path.abspath(os.path.dirname(locate_package_json()))
     conf = parse_package_json()
+
     if 'jspm' in conf:
         conf = conf['jspm']
 
@@ -51,4 +52,5 @@ def find_systemjs_location():
 
     # check for explicit location, else fall back to the default as jspm does
     jspm_packages = conf['packages'] if 'packages' in conf else 'jspm_packages'
-    return os.path.join(location, jspm_packages, 'system.js')
+    base = conf['baseURL'] if 'baseURL' in conf else '.'
+    return os.path.join(location, base, jspm_packages, 'system.js')

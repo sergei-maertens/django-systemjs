@@ -59,7 +59,7 @@ class PackageJsonTests(SimpleTestCase):
             }
         })
 
-    @override_settings(STATIC_ROOT=overridden_path)
+    @override_settings(STATIC_ROOT=os.path.join(overridden_path, 'static'))
     @mock.patch('systemjs.jspm.locate_package_json')
     def test_nested_jspm_extract(self, mock):
         """
@@ -72,7 +72,7 @@ class PackageJsonTests(SimpleTestCase):
         expected_location = os.path.join(settings.STATIC_ROOT, 'jspm', 'system.js')
         self.assertEqual(location, expected_location)
 
-    @override_settings(STATIC_ROOT=overridden_path)
+    @override_settings(STATIC_ROOT=os.path.join(overridden_path, 'static'))
     @mock.patch('systemjs.jspm.locate_package_json')
     def test_non_nested_jspm_extract(self, mock):
         """

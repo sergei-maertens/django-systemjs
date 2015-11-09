@@ -1,6 +1,18 @@
 Changelog
 =========
 
+0.3.3
+-----
+Added post-processing of `jspm_packages/system.js` if it is within
+`settings.STATIC_ROOT`.
+
+This introduces a new setting: `SYSTEMJS_PACKAGE_JSON_DIR`. Set this to the path
+of the folder containing `package.json`. `package.json` will be inspected to
+figure out the install path of jspm - and only post-process if the latter path
+is within `settings.STATIC_ROOT`. By default, `settings.BASE_DIR` (provided by
+the default `django-admin.py startproject` template) will be chosen for this
+directory.
+
 0.3.2
 -----
 Fixed incorrect passing of the --log option.

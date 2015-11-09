@@ -5,7 +5,7 @@ source = systemjs
 [report]
 omit = */migrations/*,*/tests/*
 exclude_lines =
-	pragma: no cover,
+	pragma: no cover
     noqa
 
 [html]

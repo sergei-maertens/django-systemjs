@@ -108,3 +108,8 @@ class PackageJsonTests(SimpleTestCase):
 
         with self.assertRaises(ImproperlyConfigured):
             SystemJSConf().configure_package_json_dir(None)
+
+    @override_settings(SYSTEMJS_PACKAGE_JSON_DIR=None)
+    def test_invalid_systemjs_package_json_dir_setting(self):
+        with self.assertRaises(ImproperlyConfigured):
+            locate_package_json()

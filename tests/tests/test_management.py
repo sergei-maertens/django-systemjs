@@ -149,10 +149,13 @@ class PostProcessSystemJSTests(ClearStaticMixin, SimpleTestCase):
     """
 
     def setUp(self):
+        super(PostProcessSystemJSTests, self).setUp()
+
         self.out = StringIO()
         self.err = StringIO()
         self._clear_static()
 
+    def write_systemjs(self):
         basedir = os.path.abspath(os.path.join(settings.STATIC_ROOT, 'jspm_packages'))
         self.systemjs_location = os.path.join(basedir, 'system.js')
         if not os.path.exists(basedir):
@@ -162,35 +165,31 @@ class PostProcessSystemJSTests(ClearStaticMixin, SimpleTestCase):
         with open(self.systemjs_location, 'w') as of:
             of.write('alert("I am system.js");')
 
-        self.patcher = mock.patch('systemjs.jspm.find_systemjs_location')
-        self.mocked = self.patcher.start()
-        self.mocked.return_value = self.systemjs_location
-
-    def tearDown(self):
-        super(PostProcessSystemJSTests, self).tearDown()
-        self.patcher.stop()
-
-    def test_systemjs_outside_of_static_root(self, bundle_mock):
+    @mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+    def test_systemjs_outside_of_static_root(self, systemjs_mock, bundle_mock):
         """
         If `system.js` is not inside of settings.STATIC_ROOT, it
         should not get post-processed explicitly as collectstatic does this.
         """
         bundle_mock.side_effect = _bundle
         # patch the location to outside of settings.STATIC_ROOT
-        self.mocked.return_value = '/non/existant/path'
+        systemjs_mock.return_value = '/non/existant/path'
 
-        self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
         call_command('systemjs_bundle', stdout=self.out, stderr=self.err)
-        # system.js exists + created one file + did post processing
-        self.assertEqual(_num_files(settings.STATIC_ROOT), 3)
+        # created one file + did post processing
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 2)
         self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made
 
-    def test_systemjs_inside_static_root(self, bundle_mock):
+    @mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+    def test_systemjs_inside_static_root(self, systemjs_mock, bundle_mock):
         """
         See issue #5: if jspm installs directly into settings.STATIC_ROOT,
         with the CachedStaticFilesStorage, the `system.js` file is not post-processed.
         """
         bundle_mock.side_effect = _bundle
+        self.write_systemjs()
+        systemjs_mock.return_value = self.systemjs_location
 
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
         call_command('systemjs_bundle', stdout=self.out, stderr=self.err)

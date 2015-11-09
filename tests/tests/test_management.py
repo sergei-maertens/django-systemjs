@@ -48,10 +48,24 @@ class ClearStaticMixin(object):
             pass
 
 
-@mock.patch('systemjs.base.System.bundle')
-class ManagementCommandTests(ClearStaticMixin, SimpleTestCase):
+class MockFindSystemJSLocation(object):
 
     def setUp(self):
+        super(MockFindSystemJSLocation, self).setUp()
+        self.patcher = mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+        self.mock = self.patcher.start()
+        self.mock.return_value = '/dummy/path/system.js'
+
+    def tearDown(self):
+        super(MockFindSystemJSLocation, self).tearDown()
+        self.patcher.stop()
+
+
+@mock.patch('systemjs.base.System.bundle')
+class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleTestCase):
+
+    def setUp(self):
+        super(ManagementCommandTests, self).setUp()
         self.out = StringIO()
         self.err = StringIO()
         self._clear_static()
@@ -114,16 +128,14 @@ class ManagementCommandTests(ClearStaticMixin, SimpleTestCase):
         self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made
 
 
-class FailedBundleTests(SimpleTestCase):
+class FailedBundleTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleTestCase):
 
     def setUp(self):
+        super(FailedBundleTests, self).setUp()
         self.out = StringIO()
         self.err = StringIO()
 
-        try:
-            shutil.rmtree(settings.STATIC_ROOT)
-        except (OSError, IOError):
-            pass
+        self._clear_static()
 
     @override_settings(SYSTEMJS_JSPM_EXECUTABLE='gibberish')
     @mock.patch('systemjs.base.System.get_jspm_version')

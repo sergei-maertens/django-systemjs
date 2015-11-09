@@ -101,3 +101,10 @@ class PackageJsonTests(SimpleTestCase):
 
         with self.assertRaises(ImproperlyConfigured):
             find_systemjs_location()
+
+    @override_settings(BASE_DIR=None)
+    def test_missing_package_json_dir_setting(self):
+        from systemjs.conf import SystemJSConf
+
+        with self.assertRaises(ImproperlyConfigured):
+            SystemJSConf().configure_package_json_dir(None)

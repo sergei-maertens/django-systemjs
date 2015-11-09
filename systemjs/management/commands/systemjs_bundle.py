@@ -15,6 +15,7 @@ from django.template.loaders.app_directories import get_app_template_dirs
 
 from systemjs.base import System
 from systemjs.compat import Lexer
+from systemjs.jspm import find_systemjs_location
 
 
 SYSTEMJS_TAG_RE = re.compile(r"""systemjs_import\s+(['\"])(?P<app>.*)\1""")
@@ -91,6 +92,7 @@ class Command(BaseCommand):
                         all_apps.append(imatch.group('app'))
 
         bundled_files = OrderedDict()
+        # note: this should be configurable, if people use S3BotoStorage for example, it needs to end up there
         storage = FileSystemStorage(settings.STATIC_ROOT, base_url=settings.STATIC_URL)
         for app in all_apps:
             rel_path = System.bundle(app, force=True, sfx=options.get('sfx'))
@@ -99,6 +101,12 @@ class Command(BaseCommand):
             else:
                 self.stdout.write('Bundled {app} into {out}'.format(app=app, out=rel_path))
             bundled_files[rel_path] = (storage, rel_path)
+
+        # post-process system.js if it's within settings.STATIC_ROOT
+        systemjs_path = find_systemjs_location()
+        if systemjs_path.startswith(settings.STATIC_ROOT):
+            relative = os.path.relpath(systemjs_path, settings.STATIC_ROOT)
+            bundled_files[relative] = (storage, relative)
 
         if self.post_process and hasattr(self.storage, 'post_process'):
             processor = self.storage.post_process(bundled_files, dry_run=False)

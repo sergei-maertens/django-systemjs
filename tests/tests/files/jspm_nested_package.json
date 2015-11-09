@@ -1,0 +1,9 @@
+{
+  "name": "dummy",
+  "jspm": {
+      "directories": {
+        "baseURL": "static",
+        "packages": "jspm"
+      }
+  }
+}

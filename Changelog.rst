@@ -1,6 +1,10 @@
 Changelog
 =========
 
+0.3.4
+-----
+Fixes some mistakes from 0.3.3. Mondays...
+
 0.3.3
 -----
 Added post-processing of `jspm_packages/system.js` if it is within

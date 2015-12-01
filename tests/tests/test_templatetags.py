@@ -37,3 +37,21 @@ class TemplateTagTests(SimpleTestCase):
 
         with self.assertRaises(TemplateSyntaxError):
             django_engine.from_string("""{% load system_tags %}{% systemjs_import 'foo' 'bar' %}""")
+
+    @override_settings(SYSTEMJS_ENABLED=False, SYSTEMJS_DEFAULT_JS_EXTENSIONS=False)
+    def test_debug_module_without_extension_no_default(self):
+        rendered = self._render()
+        self.assertEqual(rendered, """<script type="text/javascript">System.import('myapp/main');</script>""")
+
+        self.template = django_engine.from_string("""{% load system_tags %}{% systemjs_import 'myapp/main.js' %}""")
+        rendered = self._render()
+        self.assertEqual(rendered, """<script type="text/javascript">System.import('myapp/main.js');</script>""")
+
+    @override_settings(SYSTEMJS_ENABLED=False, SYSTEMJS_DEFAULT_JS_EXTENSIONS=True)
+    def test_debug_module_without_extension_default_js(self):
+        rendered = self._render()
+        self.assertEqual(rendered, """<script type="text/javascript">System.import('myapp/main.js');</script>""")
+
+        self.template = django_engine.from_string("""{% load system_tags %}{% systemjs_import 'myapp/main.js' %}""")
+        rendered = self._render()
+        self.assertEqual(rendered, """<script type="text/javascript">System.import('myapp/main.js');</script>""")

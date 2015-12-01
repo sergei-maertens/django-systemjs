@@ -19,6 +19,8 @@ class SystemJSConf(AppConf):
 
     PACKAGE_JSON_DIR = getattr(settings, 'BASE_DIR', None)
 
+    DEFAULT_JS_EXTENSIONS = True
+
     class Meta:
         prefix = 'systemjs'
 

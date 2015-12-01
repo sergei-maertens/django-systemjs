@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import posixpath
+
 from django import template
 from django.contrib.staticfiles.storage import staticfiles_storage
 
@@ -20,7 +22,11 @@ class SystemImportNode(template.Node):
         """
         module_path = self.path.resolve(context)
         if not settings.SYSTEMJS_ENABLED:
-            tpl = """<script type="text/javascript">System.import('{app}.js');</script>"""
+            if settings.SYSTEMJS_DEFAULT_JS_EXTENSIONS:
+                name, ext = posixpath.splitext(module_path)
+                if not ext:
+                    module_path = '{}.js'.format(module_path)
+            tpl = """<script type="text/javascript">System.import('{app}');</script>"""
             return tpl.format(app=module_path)
 
         # else: create a bundle

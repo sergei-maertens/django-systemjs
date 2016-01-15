@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0
+---
+Added DEFAULT_JS_EXTENSIONS setting, as present in ``jspm``.
+Added Django 1.9 to the build matrix.
+
 0.3.4
 -----
 Fixes some mistakes from 0.3.3. Mondays...

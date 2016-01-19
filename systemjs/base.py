@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import logging
 import os
+import posixpath
 import subprocess
 
 from .conf import settings
@@ -30,7 +31,12 @@ class System(object):
         return self.version and self.version >= JSPM_LOG_VERSION
 
     def get_outfile(self):
-        self.js_file = u'{app}.js'.format(app=self.app)
+        hasext = True
+        if settings.SYSTEMJS_DEFAULT_JS_EXTENSIONS:
+            name, ext = posixpath.splitext(self.app)
+            if not ext:
+                hasext = False
+        self.js_file = '{app}{ext}'.format(app=self.app, ext='.js' if not hasext else '')
         outfile = os.path.join(settings.STATIC_ROOT, settings.SYSTEMJS_OUTPUT_DIR, self.js_file)
         return outfile
 
@@ -92,5 +98,5 @@ class System(object):
     def bundle(cls, app, sfx=False, **opts):
         system = cls(app, sfx=sfx, **opts)
         bundle_cmd = 'bundle-sfx' if sfx else 'bundle'
-        cmd = u'{jspm} ' + bundle_cmd + ' {app} {outfile}'
+        cmd = '{jspm} ' + bundle_cmd + ' {app} {outfile}'
         return system.command(cmd)

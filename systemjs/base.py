@@ -30,13 +30,15 @@ class System(object):
     def _has_jspm_log(self):
         return self.version and self.version >= JSPM_LOG_VERSION
 
-    def get_outfile(self):
-        hasext = True
+    def needs_ext(self):
         if settings.SYSTEMJS_DEFAULT_JS_EXTENSIONS:
             name, ext = posixpath.splitext(self.app)
             if not ext:
-                hasext = False
-        self.js_file = '{app}{ext}'.format(app=self.app, ext='.js' if not hasext else '')
+                return True
+        return False
+
+    def get_outfile(self):
+        self.js_file = '{app}{ext}'.format(app=self.app, ext='.js' if self.needs_ext() else '')
         outfile = os.path.join(settings.STATIC_ROOT, settings.SYSTEMJS_OUTPUT_DIR, self.js_file)
         return outfile
 
@@ -91,7 +93,10 @@ class System(object):
                 if not self.sfx:
                     # add the import statement, which is missing for non-sfx bundles
                     with open(outfile, 'a') as of:
-                        of.write("\nSystem.import('{app}.js');\n".format(app=self.app))
+                        of.write("\nSystem.import('{app}{ext}');\n".format(
+                            app=self.app,
+                            ext='.js' if self.needs_ext() else ''
+                        ))
         return rel_path
 
     @classmethod

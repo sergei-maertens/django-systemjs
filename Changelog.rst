@@ -1,6 +1,10 @@
 Changelog
 =========
 
+1.0.2
+-----
+Too soon on 1.0.1, missed another extension append case.
+
 1.0.1
 -----
 Bugfix related to ``DEFAULT_JS_EXTENSIONS``: when bundling a file that has the

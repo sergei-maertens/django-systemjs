@@ -54,6 +54,7 @@ class Command(BaseCommand):
     def handle(self, **options):
         self.verbosity = 2
         self.storage = staticfiles_storage
+        self.storage.systemjs_bundling = True  # set flag to check later
         extensions = options.get('extensions') or ['html']
         self.symlinks = options.get('symlinks')
         self.post_process = options['post_process']

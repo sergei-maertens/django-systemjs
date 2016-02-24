@@ -13,10 +13,9 @@ class SystemJSManifestStaticFilesStorage(ManifestStaticFilesStorage):
     systemjs_bundling = False
 
     def save_manifest(self):
-        if not self.exists(self.manifest_name):
-            raise CommandError('You need to run collectstatic first')
-
         if self.systemjs_bundling:
+            if not self.exists(self.manifest_name):
+                raise CommandError('You need to run collectstatic first')
             # load the result of collectstatic before it's overwritten
             hashed_files = self.load_manifest()
 

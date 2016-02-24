@@ -7,6 +7,7 @@ from collections import OrderedDict
 
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
+from django.core.exceptions import SuspiciousFileOperation
 from django.core.management.base import BaseCommand
 from django.core.management.utils import handle_extensions
 from django.core.files.storage import FileSystemStorage
@@ -93,7 +94,7 @@ class Command(BaseCommand):
                         all_apps.append(imatch.group('app'))
 
         bundled_files = OrderedDict()
-        # note: this should be configurable, if people use S3BotoStorage for example, it needs to end up there
+        # FIXME: this should be configurable, if people use S3BotoStorage for example, it needs to end up there
         storage = FileSystemStorage(settings.STATIC_ROOT, base_url=settings.STATIC_URL)
         for app in all_apps:
             rel_path = System.bundle(app, force=True, sfx=options.get('sfx'))
@@ -105,7 +106,11 @@ class Command(BaseCommand):
 
         # post-process system.js if it's within settings.STATIC_ROOT
         systemjs_path = find_systemjs_location()
-        if systemjs_path.startswith(settings.STATIC_ROOT):
+        try:
+            within_static_root = self.storage.exists(systemjs_path)
+        except SuspiciousFileOperation:
+            within_static_root = False
+        if within_static_root:
             relative = os.path.relpath(systemjs_path, settings.STATIC_ROOT)
             bundled_files[relative] = (storage, relative)
 

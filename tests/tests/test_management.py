@@ -11,7 +11,7 @@ except ImportError:  # Py3
     from io import StringIO
 
 from django.conf import settings
-from django.core.management import call_command
+from django.core.management import call_command, CommandError
 from django.test import SimpleTestCase, override_settings
 
 
@@ -254,3 +254,11 @@ class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
             'app/dummy.js': 'app/dummy.65d75b61cae0.js',
             'SYSTEMJS/app/dummy.js': 'SYSTEMJS/app/dummy.5d1dad25dae3.js'
         })
+
+    @mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+    def test_no_collectstatic(self, m1, m2):
+        m1.return_value = '/fake/path/'
+        m2.side_effect = _bundle
+
+        with self.assertRaises(CommandError):
+            call_command('systemjs_bundle')

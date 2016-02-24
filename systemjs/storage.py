@@ -27,4 +27,5 @@ class SystemJSManifestStaticFilesStorage(ManifestStaticFilesStorage):
         hashed_files.update(self.hashed_files)
         payload = {'paths': hashed_files, 'version': self.manifest_version}
         contents = json.dumps(payload).encode('utf-8')
+        self.delete(self.manifest_name)  # delete old file
         self._save(self.manifest_name, ContentFile(contents))

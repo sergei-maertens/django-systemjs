@@ -216,3 +216,28 @@ class JSPMIntegrationTests(SimpleTestCase):
 
         self.assertEqual(mock_subproc_popen.call_count, 1)
         self.assertEqual(process_mock.communicate.call_count, 1)
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch.object(System, 'get_jspm_version')
+    def test_sourcemap_comment(self, mock_version, mock_subproc_popen):
+        """
+        Asserts that the sourcemap comment is still at the end.
+        """
+        mock_version.return_value = (0, 15, 7)
+        app_name = 'app/dummy'
+
+        def side_effect(*args, **kwargs):
+            content = 'alert(\'foo\')\n//# sourceMappingURL=dummy.js.map'
+            _bundle(app_name, content=content)
+            return ('output', 'error')
+
+        # mock Popen/communicate
+        mock_Popen(mock_subproc_popen, side_effect=side_effect)
+
+        # Bundle app/dummy
+        System.bundle(app_name, force=True)
+        outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/{0}.js'.format(app_name))
+        with open(outfile, 'r') as of:
+            js = of.read()
+        self.assertEqual(js, "alert('foo')\nSystem.import('app/dummy.js');\n"
+                             "//# sourceMappingURL=dummy.js.map\n")

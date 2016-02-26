@@ -29,7 +29,8 @@ def _bundle(app, **opts):
     if not os.path.isdir(os.path.dirname(outfile)):
         os.makedirs(os.path.dirname(outfile))
     with io.open(outfile, 'w') as f:
-        f.write('alert(\'foo\')')
+        content = opts.get('content', 'alert(\'foo\')')
+        f.write(content)
     return path
 
 

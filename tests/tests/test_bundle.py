@@ -216,3 +216,88 @@ class JSPMIntegrationTests(SimpleTestCase):
 
         self.assertEqual(mock_subproc_popen.call_count, 1)
         self.assertEqual(process_mock.communicate.call_count, 1)
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch.object(System, 'get_jspm_version')
+    def test_sourcemap_comment(self, mock_version, mock_subproc_popen):
+        """
+        Asserts that the sourcemap comment is still at the end.
+        """
+        mock_version.return_value = (0, 15, 7)
+        app_name = 'app/dummy'
+
+        def side_effect(*args, **kwargs):
+            content = 'alert(\'foo\')\n//# sourceMappingURL=dummy.js.map'
+            _bundle(app_name, content=content)
+            return ('output', 'error')
+
+        # mock Popen/communicate
+        mock_Popen(mock_subproc_popen, side_effect=side_effect)
+
+        # Bundle app/dummy
+        System.bundle(app_name, force=True)
+        outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/{0}.js'.format(app_name))
+        with open(outfile, 'r') as of:
+            js = of.read()
+        self.assertEqual(js, "alert('foo')\nSystem.import('app/dummy.js');\n"
+                             "//# sourceMappingURL=dummy.js.map")
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch.object(System, 'get_jspm_version')
+    def test_sourcemap_comment_end_newline(self, mock_version, mock_subproc_popen):
+        """
+        Asserts that the sourcemap comment is still at the end - with ending newline
+        """
+        mock_version.return_value = (0, 15, 7)
+        app_name = 'app/dummy'
+
+        def side_effect(*args, **kwargs):
+            content = 'alert(\'foo\')\n//# sourceMappingURL=dummy.js.map\n'
+            _bundle(app_name, content=content)
+            return ('output', 'error')
+
+        # mock Popen/communicate
+        mock_Popen(mock_subproc_popen, side_effect=side_effect)
+
+        # Bundle app/dummy
+        System.bundle(app_name, force=True)
+        outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/{0}.js'.format(app_name))
+        with open(outfile, 'r') as of:
+            js = of.read()
+        self.assertEqual(js, "alert('foo')\nSystem.import('app/dummy.js');\n"
+                             "//# sourceMappingURL=dummy.js.map")
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch.object(System, 'get_jspm_version')
+    def test_sourcemap_comment_large_file(self, mock_version, mock_subproc_popen):
+        """
+        Same test as test_sourcemap_comment, except with a 'file' that's more
+        than 100 bytes (to read multiple blocks).
+        """
+        mock_version.return_value = (0, 15, 7)
+        app_name = 'app/dummy'
+
+        lorem = '''
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+'''
+
+        def side_effect(*args, **kwargs):
+            content = 'alert(\'{}\')\n//# sourceMappingURL=dummy.js.map'.format(lorem)
+            _bundle(app_name, content=content)
+            return ('output', 'error')
+
+        # mock Popen/communicate
+        mock_Popen(mock_subproc_popen, side_effect=side_effect)
+
+        # Bundle app/dummy
+        System.bundle(app_name, force=True)
+        outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/{0}.js'.format(app_name))
+        with open(outfile, 'r') as of:
+            js = of.read()
+        self.assertEqual(js, "alert('{}')\nSystem.import('app/dummy.js');\n"
+                             "//# sourceMappingURL=dummy.js.map".format(lorem))

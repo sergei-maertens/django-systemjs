@@ -1,8 +1,9 @@
 from __future__ import unicode_literals
 
+import io
+import json
 import mock
 import os
-import io
 import shutil
 try:  # Py2
     from StringIO import StringIO
@@ -10,7 +11,7 @@ except ImportError:  # Py3
     from io import StringIO
 
 from django.conf import settings
-from django.core.management import call_command
+from django.core.management import call_command, CommandError
 from django.test import SimpleTestCase, override_settings
 
 
@@ -28,7 +29,8 @@ def _bundle(app, **opts):
     if not os.path.isdir(os.path.dirname(outfile)):
         os.makedirs(os.path.dirname(outfile))
     with io.open(outfile, 'w') as f:
-        f.write('alert(\'foo\')')
+        content = opts.get('content', 'alert(\'foo\')')
+        f.write(content)
     return path
 
 
@@ -208,3 +210,56 @@ class PostProcessSystemJSTests(ClearStaticMixin, SimpleTestCase):
         # system.js exists + created one file + did post processing for both
         self.assertEqual(_num_files(settings.STATIC_ROOT), 4)
         self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made
+
+
+@override_settings(STATICFILES_STORAGE='systemjs.storage.SystemJSManifestStaticFilesStorage')
+@mock.patch('systemjs.base.System.bundle')
+class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
+
+    """
+    Test that the storage works as expected - do not wipe collectstatic results
+    """
+
+    def setUp(self):
+        super(ManifestStorageTests, self).setUp()
+
+        self.out = StringIO()
+        self.err = StringIO()
+        self._clear_static()
+
+    @mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+    def test_collectstatic_not_broken(self, systemjs_mock, bundle_mock):
+        bundle_mock.side_effect = _bundle
+        systemjs_mock.return_value = '/non/existant/path/'
+
+        base = os.path.abspath(settings.STATIC_ROOT)
+        self.assertEqual(_num_files(base), 0)
+
+        call_command('collectstatic', link=True, interactive=False, stdout=self.out, sterr=self.err)
+        # dummy.js + dummy.hash.js + staticfiles.json
+        self.assertEqual(_num_files(base), 3)
+        with open(os.path.join(base, 'staticfiles.json')) as infile:
+            manifest = json.loads(infile.read())
+        self.assertEqual(manifest['paths'], {
+            'app/dummy.js': 'app/dummy.65d75b61cae0.js'
+        })
+
+        # bundle the files and check that the bundled file is post-processed
+        call_command('systemjs_bundle', stdout=self.out, stderr=self.err)
+
+        # + bundled file + post-processed file (not staticfiles.json!)
+        self.assertEqual(_num_files(base), 5)
+        with open(os.path.join(base, 'staticfiles.json')) as infile:
+            manifest = json.loads(infile.read())
+        self.assertEqual(manifest['paths'], {
+            'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'SYSTEMJS/app/dummy.js': 'SYSTEMJS/app/dummy.5d1dad25dae3.js'
+        })
+
+    @mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+    def test_no_collectstatic(self, m1, m2):
+        m1.return_value = '/fake/path/'
+        m2.side_effect = _bundle
+
+        with self.assertRaises(CommandError):
+            call_command('systemjs_bundle')

@@ -244,6 +244,31 @@ class JSPMIntegrationTests(SimpleTestCase):
 
     @mock.patch('subprocess.Popen')
     @mock.patch.object(System, 'get_jspm_version')
+    def test_sourcemap_comment_end_newline(self, mock_version, mock_subproc_popen):
+        """
+        Asserts that the sourcemap comment is still at the end - with ending newline
+        """
+        mock_version.return_value = (0, 15, 7)
+        app_name = 'app/dummy'
+
+        def side_effect(*args, **kwargs):
+            content = 'alert(\'foo\')\n//# sourceMappingURL=dummy.js.map\n'
+            _bundle(app_name, content=content)
+            return ('output', 'error')
+
+        # mock Popen/communicate
+        mock_Popen(mock_subproc_popen, side_effect=side_effect)
+
+        # Bundle app/dummy
+        System.bundle(app_name, force=True)
+        outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/{0}.js'.format(app_name))
+        with open(outfile, 'r') as of:
+            js = of.read()
+        self.assertEqual(js, "alert('foo')\nSystem.import('app/dummy.js');\n"
+                             "//# sourceMappingURL=dummy.js.map")
+
+    @mock.patch('subprocess.Popen')
+    @mock.patch.object(System, 'get_jspm_version')
     def test_sourcemap_comment_large_file(self, mock_version, mock_subproc_popen):
         """
         Same test as test_sourcemap_comment, except with a 'file' that's more

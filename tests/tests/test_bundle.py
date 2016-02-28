@@ -240,4 +240,4 @@ class JSPMIntegrationTests(SimpleTestCase):
         with open(outfile, 'r') as of:
             js = of.read()
         self.assertEqual(js, "alert('foo')\nSystem.import('app/dummy.js');\n"
-                             "//# sourceMappingURL=dummy.js.map\n")
+                             "//# sourceMappingURL=dummy.js.map")

@@ -1,6 +1,28 @@
 Changelog
 =========
 
+1.1.0
+-----
+Small feature release with improvements:
+
+* Added ``systemjs.storage.SystemJSManifestStaticFilesStorage``
+  staticfiles storage backend. **It is required if you want to use the
+  ``django.contrib.staticfiles.storage.ManifestStaticFilesStorage`` with
+  django-systemjs.**
+
+  django-systemjs runs the post-process hook, which in turn calls
+  ``save_manifest``. The Django shipped version then deletes the old manifest,
+  but we don't know anything about the staticfiles in django-systemjs. This
+  storage backend makes sure to not delete the staticfiles manifest, it only
+  adds to it.
+
+* Better treatment of ``sourceMap`` comments.
+
+  JSPM creates the sourcemap and adds a ``// sourceMap=...`` comment to the
+  generated bundle. django-systemjs added the ``System.import(...)`` statement
+  to this bundle, causing the sourcemap comment to not be the last line of the
+  file. This is fixed in this release.
+
 1.0.2
 -----
 Too soon on 1.0.1, missed another extension append case.

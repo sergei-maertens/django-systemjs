@@ -12,7 +12,7 @@ INSTALLED_APPS = [
 
 ROOT_URLCONF = 'tests.urls'
 
-DEBUG = True
+DEBUG = False
 STATIC_URL = '/static/'
 SECRET_KEY = 'this-is-really-not-a-secret'
 

@@ -10,6 +10,9 @@ import subprocess
 VERSION = (1, 1, 0, 'final', 0)
 
 
+default_app_config = 'systemjs.apps.SystemJSConfig'
+
+
 def get_version(version=None):
     "Returns a PEP 386-compliant version number from VERSION."
     version = get_complete_version(version)

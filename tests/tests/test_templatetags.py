@@ -25,7 +25,7 @@ class TemplateTagTests(SimpleTestCase):
         rendered = self._render()
         self.assertEqual(rendered, """<script type="text/javascript">System.import('myapp/main.js');</script>""")
 
-    @override_settings(SYSTEMJS_OUTPUT_DIR='SJ')
+    @override_settings(SYSTEMJS_ENABLED=True, SYSTEMJS_OUTPUT_DIR='SJ')
     def test_normal(self):
         rendered = self._render()
         expected_url = urljoin(settings.STATIC_URL, 'SJ/myapp/main.js')

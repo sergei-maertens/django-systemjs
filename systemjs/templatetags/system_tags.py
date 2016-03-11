@@ -3,9 +3,9 @@ from __future__ import unicode_literals
 import posixpath
 
 from django import template
+from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 
-from systemjs.conf import settings
 from systemjs.base import System
 
 register = template.Library()

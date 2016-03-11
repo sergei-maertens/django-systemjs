@@ -121,14 +121,14 @@ def find_sourcemap_comment(filepath, block_size=100):
 
     Bundled output files can have massive amounts of lines, and the sourceMap
     comment is always at the end. So, to extract it efficiently, we read out the
-    lines of the file starting from the end. We look back maximum 2 lines.
+    lines of the file starting from the end. We look back at most 2 lines.
 
+    :param:filepath: path to output bundle file containing the sourcemap comment
     :param:blocksize: integer saying how many bytes to read at once
     :return:string with the sourcemap comment or None
     """
 
-    block_size = block_size
-    MAX_TRACKBACK = 2  # look back maximum 2 lines, catching potential blank line at the end
+    MAX_TRACKBACK = 2  # look back at most 2 lines, catching potential blank line at the end
 
     block_number = -1
     # blocks of size block_size, in reverse order starting from the end of the file

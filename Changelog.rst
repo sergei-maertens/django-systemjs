@@ -1,6 +1,16 @@
 Changelog
 =========
 
+1.1.1
+-----
+
+Fixes loading of the configuration options in tests.
+
+In previous releases, using `django.test.utils.override_settings` in certain
+ways happened before the django-systemjs settings were appended. This was
+probably only the case for Django < 1.9.
+
+
 1.1.0
 -----
 Small feature release with improvements:

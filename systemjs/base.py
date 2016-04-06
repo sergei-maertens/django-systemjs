@@ -89,7 +89,7 @@ class System(object):
                     fmt = 'Could not bundle \'%s\': \n%s'
                     logger.warn(fmt, self.app, err)
                     raise BundleError(fmt % (self.app, err))
-                if result:
+                if result.strip():
                     logger.info(result)
             except (IOError, OSError) as e:
                 if isinstance(e, BundleError):

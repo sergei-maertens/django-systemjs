@@ -8,6 +8,8 @@ import subprocess
 from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 
+from semantic_version import Version
+
 from systemjs.base import System, BundleError
 from .helpers import mock_Popen
 from .test_management import _bundle
@@ -19,7 +21,7 @@ class BundleTests(SimpleTestCase):
         super(BundleTests, self).setUp()
         self.patcher = mock.patch.object(System, 'get_jspm_version')
         mocked = self.patcher.start()
-        mocked.return_value = (0, 15, 0)
+        mocked.return_value = Version('0.15.0')
 
     def tearDown(self):
         super(BundleTests, self).tearDown()
@@ -119,7 +121,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         # Call version
         version = system.get_jspm_version({'jspm': 'jspm'})
         self.assertEqual(mock_subproc_popen.call_count, 1)
-        self.assertEqual(version, (0, 15, 7))
+        self.assertEqual(version, Version('0.15.7'))
 
         command = mock_subproc_popen.call_args[0][0]
         self.assertEqual(command, 'jspm --version')
@@ -155,7 +157,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         JSPM > 0.16.0 has the --log option that surpresses levels of
         output.
         """
-        mock_version.return_value = (0, 16, 3)
+        mock_version.return_value = Version('0.16.3')
 
         app_name = 'app/dummy'
 
@@ -197,7 +199,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         JSPM > 0.16.0 has the --log option that surpresses levels of
         output.
         """
-        mock_version.return_value = (0, 16, 3)
+        mock_version.return_value = Version('0.16.3')
 
         app_name = 'app/dummy'
 
@@ -223,7 +225,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         """
         Asserts that the sourcemap comment is still at the end.
         """
-        mock_version.return_value = (0, 15, 7)
+        mock_version.return_value = Version('0.15.7')
         app_name = 'app/dummy'
 
         def side_effect(*args, **kwargs):
@@ -248,7 +250,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         """
         Asserts that the sourcemap comment is still at the end - with ending newline
         """
-        mock_version.return_value = (0, 15, 7)
+        mock_version.return_value = Version('0.15.7')
         app_name = 'app/dummy'
 
         def side_effect(*args, **kwargs):
@@ -274,7 +276,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         Same test as test_sourcemap_comment, except with a 'file' that's more
         than 100 bytes (to read multiple blocks).
         """
-        mock_version.return_value = (0, 15, 7)
+        mock_version.return_value = Version('0.15.7')
         app_name = 'app/dummy'
 
         lorem = '''

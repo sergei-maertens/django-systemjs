@@ -8,12 +8,14 @@ import subprocess
 
 from django.utils.encoding import force_text
 
+import semantic_version
+
 from .conf import settings
 
 logger = logging.getLogger(__name__)
 
 
-JSPM_LOG_VERSION = (0, 16, 3)
+JSPM_LOG_VERSION = semantic_version.Version('0.16.3')
 
 SOURCEMAPPING_URL_COMMENT = b'//# sourceMappingURL='
 
@@ -56,8 +58,8 @@ class System(object):
         result, err = proc.communicate()  # block until it's done
         if err:
             raise BundleError("Could not determine JSPM version, error: %s", err)
-        version_string = result.split()[0].decode()
-        return tuple([int(x) for x in version_string.split('.')])
+        version_string = result.decode().split()[0]
+        return semantic_version.Version(version_string, partial=True)
 
     def command(self, command):
         """
@@ -87,7 +89,7 @@ class System(object):
                     fmt = 'Could not bundle \'%s\': \n%s'
                     logger.warn(fmt, self.app, err)
                     raise BundleError(fmt % (self.app, err))
-                if result:
+                if result.strip():
                     logger.info(result)
             except (IOError, OSError) as e:
                 if isinstance(e, BundleError):

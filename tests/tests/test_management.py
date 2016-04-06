@@ -14,6 +14,8 @@ from django.conf import settings
 from django.core.management import call_command, CommandError
 from django.test import SimpleTestCase, override_settings
 
+from semantic_version import Version
+
 
 JINJA_TEMPLATES = [{
     'BACKEND': 'django.template.backends.jinja2.Jinja2',
@@ -142,7 +144,7 @@ class FailedBundleTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleTestCa
     @override_settings(SYSTEMJS_JSPM_EXECUTABLE='gibberish')
     @mock.patch('systemjs.base.System.get_jspm_version')
     def test_bundle_failed(self, mock):
-        mock.return_value = (0, 15, 0)
+        mock.return_value = Version('0.15.0')
 
         self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
         call_command('systemjs_bundle', '--sfx', stdout=self.out, stderr=self.err)

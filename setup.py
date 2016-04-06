@@ -12,7 +12,8 @@ def read_file(name):
 
 readme = read_file('README.rst')
 requirements = [
-    'django-appconf>=0.6'
+    'django-appconf>=0.6',
+    'semantic_version',
 ]
 test_requirements = [
     'mock',

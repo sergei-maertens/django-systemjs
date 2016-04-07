@@ -30,6 +30,4 @@ and ties in perfectly with `django.contrib.staticfiles`.
 Installation
 ============
 
-Follow the documentation on `read the docs`.
-
-.. _read the docs: http://django-systemjs.readthedocs.org/en/latest/
+Follow the documentation on http://django-systemjs.readthedocs.org/en/latest/.

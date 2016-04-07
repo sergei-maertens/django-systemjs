@@ -14,8 +14,8 @@ Django SystemJS
 
 
 .. image:: https://readthedocs.org/projects/django-systemjs/badge/?version=latest
-:target: http://django-systemjs.readthedocs.org/en/latest/?badge=latest
-:alt: Documentation Status
+    :target: http://django-systemjs.readthedocs.org/en/latest/?badge=latest
+    :alt: Documentation Status
 
 
 Django SystemJS brings the Javascript of tomorrow to Django, today.

@@ -1,6 +1,15 @@
 Changelog
 =========
 
+1.2.0
+-----
+
+* Added a staticifles finder: ``systemjs.finders.SystemFinder``. Thanks to
+  https://github.com/wkevina for the report that lead to this.
+
+* Added proper documentation on readthedocs.org
+
+
 1.1.1
 -----
 

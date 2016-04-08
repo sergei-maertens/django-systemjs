@@ -46,7 +46,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Django-Choices'
+project = u'Django-Systemjs'
 copyright = u'2015-2016, Sergei Maertens'
 author = u'Sergei Maertens'
 

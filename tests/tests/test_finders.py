@@ -29,3 +29,13 @@ class FinderTests(SimpleTestCase):
             location,
             os.path.abspath(os.path.join(settings.STATIC_ROOT, 'jspm_packages', 'system.js'))
         )
+
+    def test_finder_non_jspm_package_file(self):
+        # assert that it's not found with the standard finders
+        location = finders.find('node_modules/system.js', all=False)
+        self.assertIsNone(location)
+
+        # but it is found with the custom finder...
+        with override_settings(STATICFILES_FINDERS=('systemjs.finders.SystemFinder',)):
+            location = finders.find('node_modules/system.js', all=False)
+        self.assertIsNone(location)

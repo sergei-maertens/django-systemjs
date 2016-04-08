@@ -25,4 +25,7 @@ class FinderTests(SimpleTestCase):
         # but it is found with the custom finder...
         with override_settings(STATICFILES_FINDERS=('systemjs.finders.SystemFinder',)):
             location = finders.find('jspm_packages/system.js', all=False)
-        self.assertEqual(location, os.path.join(settings.STATIC_ROOT, 'jspm_packages', 'system.js'))
+        self.assertEqual(
+            location,
+            os.path.abspath(os.path.join(settings.STATIC_ROOT, 'jspm_packages', 'system.js'))
+        )

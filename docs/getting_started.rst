@@ -15,7 +15,23 @@ Install by running:
 
    pip install django-systemjs
 
-And add ``systemjs`` to your ``settings.INSTALLED_APPS``.
+Then, add ``systemjs`` to your ``settings.INSTALLED_APPS``, and add the custom
+staticfiles finder:
+
+.. code-block::
+
+    STATICFILES_FINDERS = [
+        'django.contrib.staticfiles.finders.FileSystemFinder',
+        'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+        'systemjs.finders.SystemFinder',
+    ]
+
+
+.. note::
+    The custom finder looks up files in STATIC_ROOT directly. It is not needed
+    if you use django-compressor and have COMPRESS_ROOT set to STATIC_ROOT (the
+    default).
+
 
 JSPM
 ----

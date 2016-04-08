@@ -4,6 +4,7 @@ import mock
 import os
 import shutil
 import subprocess
+import tempfile
 
 from django.conf import settings
 from django.test import SimpleTestCase, override_settings
@@ -15,6 +16,7 @@ from .helpers import mock_Popen
 from .test_management import _bundle
 
 
+@override_settings(STATIC_ROOT=tempfile.mkdtemp())
 class BundleTests(SimpleTestCase):
 
     def setUp(self):

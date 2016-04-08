@@ -18,7 +18,7 @@ Install by running:
 Then, add ``systemjs`` to your ``settings.INSTALLED_APPS``, and add the custom
 staticfiles finder:
 
-.. code-block::
+.. code-block:: python
 
     STATICFILES_FINDERS = [
         'django.contrib.staticfiles.finders.FileSystemFinder',

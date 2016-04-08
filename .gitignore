@@ -11,7 +11,8 @@ __pycache__
 .tox
 .coverage
 cover
-tests/static
+/tests/static
+!/tests/static/jspm_packages/*
 
 # docs
 docs/_build

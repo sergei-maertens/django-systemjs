@@ -12,10 +12,7 @@ def runtests():
     from django.test.utils import get_runner
     from django.conf import settings
 
-    try:
-        django.setup()
-    except AttributeError:  # 1.6 or lower
-        pass
+    django.setup()
 
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=1, interactive=True)

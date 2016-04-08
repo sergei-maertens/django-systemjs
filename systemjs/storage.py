@@ -1,11 +1,12 @@
 import json
 
-from django.contrib.staticfiles.storage import ManifestStaticFilesStorage
+from django.conf import settings
+from django.contrib.staticfiles.storage import FileSystemStorage, ManifestStaticFilesStorage
 from django.core.files.base import ContentFile
 from django.core.management import CommandError
 
 
-class SystemJSManifestStaticFilesStorage(ManifestStaticFilesStorage):
+class SystemJSManifestStaticFilesMixin(object):
     """
     Do not delete the old manifest, but append to it.
     """
@@ -19,7 +20,7 @@ class SystemJSManifestStaticFilesStorage(ManifestStaticFilesStorage):
             # load the result of collectstatic before it's overwritten
             hashed_files = self.load_manifest()
 
-        super(SystemJSManifestStaticFilesStorage, self).save_manifest()
+        super(SystemJSManifestStaticFilesMixin, self).save_manifest()
         if not self.systemjs_bundling:
             return
 
@@ -29,3 +30,17 @@ class SystemJSManifestStaticFilesStorage(ManifestStaticFilesStorage):
         contents = json.dumps(payload).encode('utf-8')
         self.delete(self.manifest_name)  # delete old file
         self._save(self.manifest_name, ContentFile(contents))
+
+
+class SystemJSManifestStaticFilesStorage(SystemJSManifestStaticFilesMixin, ManifestStaticFilesStorage):
+    pass
+
+
+class JSPMFileStorage(FileSystemStorage):
+
+    def __init__(self, location=None, base_url=None, *args, **kwargs):
+        if location is None:
+            location = settings.STATIC_ROOT
+        if base_url is None:
+            base_url = settings.STATIC_URL
+        super(JSPMFileStorage, self).__init__(location, base_url, *args, **kwargs)

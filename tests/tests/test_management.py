@@ -5,6 +5,7 @@ import json
 import mock
 import os
 import shutil
+import tempfile
 try:  # Py2
     from StringIO import StringIO
 except ImportError:  # Py3
@@ -65,6 +66,7 @@ class MockFindSystemJSLocation(object):
         self.patcher.stop()
 
 
+@override_settings(STATIC_ROOT=tempfile.mkdtemp())
 @mock.patch('systemjs.base.System.bundle')
 class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleTestCase):
 
@@ -132,6 +134,7 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made
 
 
+@override_settings(STATIC_ROOT=tempfile.mkdtemp())
 class FailedBundleTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleTestCase):
 
     def setUp(self):
@@ -155,7 +158,9 @@ class FailedBundleTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleTestCa
         self.assertEqual(self.err.read(), 'Could not bundle app/dummy\n')
 
 
-@override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.CachedStaticFilesStorage')
+@override_settings(
+    STATIC_ROOT=tempfile.mkdtemp(),
+    STATICFILES_STORAGE='django.contrib.staticfiles.storage.CachedStaticFilesStorage')
 @mock.patch('systemjs.base.System.bundle')
 class PostProcessSystemJSTests(ClearStaticMixin, SimpleTestCase):
 
@@ -214,7 +219,9 @@ class PostProcessSystemJSTests(ClearStaticMixin, SimpleTestCase):
         self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made
 
 
-@override_settings(STATICFILES_STORAGE='systemjs.storage.SystemJSManifestStaticFilesStorage')
+@override_settings(
+    STATIC_ROOT=tempfile.mkdtemp(),
+    STATICFILES_STORAGE='systemjs.storage.SystemJSManifestStaticFilesStorage')
 @mock.patch('systemjs.base.System.bundle')
 class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
 

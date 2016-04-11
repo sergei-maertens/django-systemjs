@@ -177,6 +177,17 @@ additional template dirs for the vanilla Django template engine.
 
 Jinja2 is unsupported.
 
+Supporting all the jspm command line arguments is work in progress. Currently
+the following options are supported:
+
+Options
++++++++
+
+* ``--minify``: passed the ``--minify`` flag down to jspm to generate minified
+  bundles
+* ``--sfx``: generate a self-executing bundle (see the :ref:`note <sfx-note>` below.)
+
+.. _sfx-note:
 .. note::
 
     The default bundling mechanism changed in 0.2. Before 0.2, all bundles would

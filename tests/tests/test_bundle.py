@@ -88,6 +88,30 @@ class BundleTests(SimpleTestCase):
         self.assertEqual(process_mock.communicate.call_count, 1)
 
     @mock.patch('subprocess.Popen')
+    def test_bundle_minify_suprocess(self, mock_subproc_popen):
+        """
+        Test that bundling calls the correct subprocess command
+        """
+
+        app_name = 'app/dummy'
+
+        def side_effect(*args, **kwargs):
+            _bundle(app_name)
+            return ('output', 'error')
+
+        # mock Popen/communicate
+        process_mock = mock_Popen(mock_subproc_popen, side_effect=side_effect)
+
+        # Bundle app/dummy
+        System.bundle('app/dummy', minify=True, force=True)
+        self.assertEqual(mock_subproc_popen.call_count, 1)
+        command = mock_subproc_popen.call_args[0][0]
+        outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/app/dummy.js')
+        self.assertEqual(command, 'jspm bundle app/dummy {0} --minify'.format(outfile))
+
+        self.assertEqual(process_mock.communicate.call_count, 1)
+
+    @mock.patch('subprocess.Popen')
     def test_oserror_caught(self, mock):
         def oserror():
             raise OSError('Error')

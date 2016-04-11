@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-import os
-
 from django.contrib.staticfiles.finders import BaseStorageFinder
 
 from .storage import JSPMFileStorage
@@ -21,7 +19,7 @@ class SystemFinder(BaseStorageFinder):
 
         # TODO: figure out the 'jspm_packages' dir from packag.json.
         """
-        bits = os.path.split(path)
+        bits = path.split('/')
         if not bits or bits[0] != 'jspm_packages':
             return []
         return super(SystemFinder, self).find(path, all=all)

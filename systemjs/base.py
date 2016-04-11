@@ -32,6 +32,7 @@ class System(object):
         self.stdout = self.stdin = self.stderr = subprocess.PIPE
         self.cwd = None
         self.sfx = opts.pop('sfx', False)
+        self.minify = opts.pop('minify', False)
         self.version = None  # JSPM version
 
     def _has_jspm_log(self):
@@ -78,6 +79,9 @@ class System(object):
                 if self._has_jspm_log():
                     command += ' --log {log}'
                     options.setdefault('log', 'err')
+
+                if self.minify:
+                    command += ' --minify'
 
                 cmd = command.format(app=self.app, outfile=outfile, **options)
                 proc = subprocess.Popen(

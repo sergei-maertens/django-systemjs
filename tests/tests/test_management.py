@@ -88,7 +88,7 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
 
         self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=False))
 
     def test_sfx_option(self, bundle_mock):
         bundle_mock.side_effect = _bundle
@@ -98,7 +98,17 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
 
         self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=True))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=True, minify=False))
+
+    def test_minify_option(self, bundle_mock):
+        bundle_mock.side_effect = _bundle
+
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        call_command('systemjs_bundle', '--minify', stdout=self.out, stderr=self.err)
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
+
+        self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=True))
 
     @override_settings(TEMPLATES=JINJA_TEMPLATES)
     def test_different_backend(self, bundle_mock):
@@ -110,7 +120,7 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
 
         self.assertEqual(bundle_mock.call_count, 1)  # we only support vanilla templates
         # as opposed to app/dummy2
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=False))
 
     @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.CachedStaticFilesStorage')
     def test_post_process(self, bundle_mock):

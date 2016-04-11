@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import argparse
 import io
 import os
 import re
@@ -38,6 +39,9 @@ class Command(BaseCommand):
             '--sfx',
             action='store_true', dest='sfx',
             help="Generate self-executing bundles.")
+
+        parser.add_argument('--minify', action='store_true', help='Let jspm minify the bundle')
+
         parser.add_argument(
             '--extension', '-e', dest='extensions',
             help='The file extension(s) to examine (default: "html"). Separate '
@@ -97,7 +101,7 @@ class Command(BaseCommand):
         # FIXME: this should be configurable, if people use S3BotoStorage for example, it needs to end up there
         storage = FileSystemStorage(settings.STATIC_ROOT, base_url=settings.STATIC_URL)
         for app in all_apps:
-            rel_path = System.bundle(app, force=True, sfx=options.get('sfx'))
+            rel_path = System.bundle(app, force=True, sfx=options.get('sfx'), minify=options.get('minify'))
             if not self.storage.exists(rel_path):
                 self.stderr.write('Could not bundle {app}'.format(app=app))
             else:

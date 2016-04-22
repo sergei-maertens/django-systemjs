@@ -1,6 +1,22 @@
 Changelog
 =========
 
+1.3.2
+-----
+
+* let the finder also serve ``SYSTEMJS_OUTPUT_DIR``, next to the ``jspm_packages``
+  folder
+
+1.3.1
+-----
+
+* Fixed a url path splitting bug
+
+1.3.0
+-----
+* Fixes in the documentation
+* Added the ``--minify`` option for bundling
+
 1.2.0
 -----
 

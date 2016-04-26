@@ -203,6 +203,13 @@ Options
 
         python manage.py systemjs_bundle --sfx
 
+* ``--template, -t``: pass the name of a template (for example ``myapp/base.html``),
+  and Django SystemJS will only look in those files for imported apps. It will
+  no longer parse all project templates. This option can be specified multiple
+  times to look in a set of templates.
+
+  .. note:: Added in 1.4.
+
 
 Example workflow
 ================

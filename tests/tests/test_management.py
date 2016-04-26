@@ -143,6 +143,25 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
         self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made
 
+    def test_templates_option(self, bundle_mock):
+        bundle_mock.side_effect = _bundle
+
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        call_command('systemjs_bundle', '--template', 'base.html', stdout=self.out, stderr=self.err)
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
+
+        self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=False))
+
+    def test_templates_option_wrong_tpl(self, bundle_mock):
+        bundle_mock.side_effect = _bundle
+
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        with self.assertRaises(CommandError):
+            call_command('systemjs_bundle', '--template', 'nothere.html', stdout=self.out, stderr=self.err)
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        self.assertEqual(bundle_mock.call_count, 0)
+
 
 @override_settings(STATIC_ROOT=tempfile.mkdtemp())
 class FailedBundleTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleTestCase):

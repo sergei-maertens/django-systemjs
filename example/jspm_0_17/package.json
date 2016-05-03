@@ -1,0 +1,44 @@
+{
+  "name": "jspm_0_17",
+  "version": "1.0.0",
+  "description": "Example django+jspm 0.17 project",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergei-maertens/django-systemjs.git"
+  },
+  "keywords": [
+    "django",
+    "jspm",
+    "es6"
+  ],
+  "author": "Sergei Maertens <sergeimaertens@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sergei-maertens/django-systemjs/issues"
+  },
+  "homepage": "https://github.com/sergei-maertens/django-systemjs#readme",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-watch": "^4.3.5",
+    "jspm": "^0.17.0-beta.14"
+  },
+  "jspm": {
+    "name": "jspm_0_17",
+    "main": "main.js",
+    "directories": {
+      "baseURL": "staticfiles",
+      "lib": "staticfiles/js"
+    },
+    "configFiles": {
+      "jspm:browser": "static/jspm.browser.js",
+      "jspm": "static/jspm.config.js"
+    },
+    "devDependencies": {
+      "plugin-babel": "npm:systemjs-plugin-babel@^0.0.9"
+    }
+  }
+}

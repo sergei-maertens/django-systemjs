@@ -12,7 +12,7 @@ var static_src = [
 
 // watch task
 gulp.task('default',function() {
-    gulp.src(static_src, {base: '.'})
+    gulp.src(static_src, {base: './static'})
         .pipe(watch(static_src))
         .pipe(gulp.dest('staticfiles'));
 });

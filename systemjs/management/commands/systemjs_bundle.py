@@ -1,32 +1,21 @@
 from __future__ import unicode_literals
 
-import io
 import os
-import re
 from collections import OrderedDict
 
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.exceptions import SuspiciousFileOperation
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.core.management.utils import handle_extensions
 from django.core.files.storage import FileSystemStorage
-from django.template.base import TOKEN_BLOCK
-from django.template import loader, TemplateDoesNotExist
-from django.template.loaders.app_directories import get_app_template_dirs
 
 from systemjs.base import System
-from systemjs.compat import Lexer
 from systemjs.jspm import find_systemjs_location
-from systemjs.templatetags.system_tags import SystemImportNode
+from ._package_discovery import TemplateDiscoveryMixin
 
 
-SYSTEMJS_TAG_RE = re.compile(r"""systemjs_import\s+(['\"])(?P<app>.*)\1""")
-
-RESOLVE_CONTEXT = {}
-
-
-class Command(BaseCommand):
+class Command(TemplateDiscoveryMixin, BaseCommand):
     help = "Find {% systemjs_import %} tags and bundle the JS apps."
     requires_system_checks = False
 
@@ -66,26 +55,6 @@ class Command(BaseCommand):
             action='store_false', dest='post_process', default=True,
             help="Do NOT post process collected files.")
 
-    def discover_templates(self):
-        template_dirs = list(get_app_template_dirs('templates'))
-        for config in settings.TEMPLATES:
-            # only support vanilla Django templates
-            if config['BACKEND'] != 'django.template.backends.django.DjangoTemplates':
-                continue
-            template_dirs += list(config['DIRS'])
-
-        all_files = []
-        for template_dir in template_dirs:
-            for dirpath, dirnames, filenames in os.walk(template_dir, topdown=True, followlinks=self.symlinks):
-                for filename in filenames:
-                    filepath = os.path.join(dirpath, filename)
-                    file_ext = os.path.splitext(filename)[1]
-                    if file_ext not in self.extensions:
-                        continue
-                    all_files.append(filepath)
-
-        return all_files
-
     def handle(self, **options):
         self.verbosity = 2
         self.storage = staticfiles_storage
@@ -93,40 +62,10 @@ class Command(BaseCommand):
         extensions = options.get('extensions') or ['html']
         self.symlinks = options.get('symlinks')
         self.post_process = options['post_process']
-        # self.post_processed_files = []
 
         self.extensions = handle_extensions(extensions)
 
-        # find all template files
-        all_apps = []
-        if not options.get('templates'):
-
-            all_files = self.discover_templates()
-            for fp in all_files:
-                with io.open(fp, 'r', encoding=settings.FILE_CHARSET) as template_file:
-                    src_data = template_file.read()
-
-                for t in Lexer(src_data).tokenize():
-                    if t.token_type == TOKEN_BLOCK:
-                        imatch = SYSTEMJS_TAG_RE.match(t.contents)
-                        if imatch:
-                            all_apps.append(imatch.group('app'))
-        else:
-            for tpl in options.get('templates'):
-                try:
-                    template = loader.get_template(tpl)
-                except TemplateDoesNotExist:
-                    raise CommandError('Template \'%s\' does not exist' % tpl)
-                import_nodes = template.template.nodelist.get_nodes_by_type(SystemImportNode)
-                for node in import_nodes:
-                    app = node.path.resolve(RESOLVE_CONTEXT)
-                    if not app:
-                        self.stdout.write(self.style.WARNING(
-                            '{tpl}: Could not resolve path with context {ctx}, skipping.'.format(
-                                tpl=tpl, ctx=RESOLVE_CONTEXT)
-                        ))
-                        continue
-                    all_apps.append(app)
+        all_apps = self.find_apps(templates=options.get('templates'))
 
         bundled_files = OrderedDict()
         # FIXME: this should be configurable, if people use S3BotoStorage for example, it needs to end up there

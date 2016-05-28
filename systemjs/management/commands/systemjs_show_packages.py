@@ -1,30 +1,9 @@
 from __future__ import unicode_literals
 
-import io
-import os
-import re
-from collections import OrderedDict
-
-from django.conf import settings
-from django.contrib.staticfiles.storage import staticfiles_storage
-from django.core.exceptions import SuspiciousFileOperation
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.core.management.utils import handle_extensions
-from django.core.files.storage import FileSystemStorage
-from django.template.base import TOKEN_BLOCK
-from django.template import loader, TemplateDoesNotExist
-from django.template.loaders.app_directories import get_app_template_dirs
 
-from systemjs.base import System
-from systemjs.compat import Lexer
-from systemjs.jspm import find_systemjs_location
-from systemjs.templatetags.system_tags import SystemImportNode
 from ._package_discovery import TemplateDiscoveryMixin
-
-
-SYSTEMJS_TAG_RE = re.compile(r"""systemjs_import\s+(['\"])(?P<app>.*)\1""")
-
-RESOLVE_CONTEXT = {}
 
 
 class Command(TemplateDiscoveryMixin, BaseCommand):
@@ -55,3 +34,7 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
         self.extensions = handle_extensions(extensions)
 
         all_apps = self.find_apps(templates=options.get('templates'))
+        for tpl_name, apps in sorted(all_apps.items()):
+            self.stdout.write(self.style.MIGRATE_LABEL(tpl_name))
+            for app in apps:
+                self.stdout.write('  {}'.format(app))

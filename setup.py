@@ -32,6 +32,7 @@ setup(
     extras_require={
         'test': test_requirements,
     },
+    scripts=['bin/trace-deps.js'],
     tests_require=test_requirements,
     test_suite='runtests.runtests',
 

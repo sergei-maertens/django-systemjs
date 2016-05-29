@@ -48,14 +48,20 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
         if 'NODE_PATH' not in node_env:
             node_env['NODE_PATH'] = './node_modules'  # FIXME: don't hardcode
 
-        all_deps = {}
+        all_deps = {
+            'version': 1,  # version of cache format
+            'packages': {},
+            'aggregated': {},
+        }
         for app in all_apps:
             process = subprocess.Popen(
                 "trace-deps.js {}".format(app), shell=True,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=node_env
             )
             out, err = process.communicate()
-            all_deps.update(json.loads(out))
+            deps = json.loads(out)
+            all_deps['packages'][app] = deps
+            all_deps['aggregated'].update(json.loads(out))
 
         if not os.path.exists(CACHE_DIR):
             os.makedirs(CACHE_DIR)

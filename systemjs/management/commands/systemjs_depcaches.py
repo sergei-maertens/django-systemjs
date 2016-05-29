@@ -2,16 +2,12 @@ from __future__ import unicode_literals
 
 import json
 import os
-import subprocess
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.management.utils import handle_extensions
 
+from systemjs.base import System, SystemTracer
 from ._package_discovery import TemplateDiscoveryMixin
-
-
-CACHE_DIR = os.path.join(settings.ROOT_DIR, 'cache', 'systemjs')
 
 
 class Command(TemplateDiscoveryMixin, BaseCommand):
@@ -44,27 +40,14 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
         all_apps = self.find_apps(templates=options.get('templates'))
         all_apps = set(sum(all_apps.values(), []))
 
-        node_env = os.environ.copy()
-        if 'NODE_PATH' not in node_env:
-            node_env['NODE_PATH'] = './node_modules'  # FIXME: don't hardcode
+        node_path = './node_modules'  # FIXME: don't hardcode
+        tracer = SystemTracer(node_path=node_path)
 
-        all_deps = {
-            'version': 1,  # version of cache format
-            'packages': {},
-            'aggregated': {},
-        }
+        all_deps = {}
         for app in all_apps:
-            process = subprocess.Popen(
-                "trace-deps.js {}".format(app), shell=True,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=node_env
-            )
-            out, err = process.communicate()
-            deps = json.loads(out)
-            all_deps['packages'][app] = deps
-            all_deps['aggregated'].update(json.loads(out))
+            deps = tracer.trace(app)
+            all_deps[app] = deps
 
-        if not os.path.exists(CACHE_DIR):
-            os.makedirs(CACHE_DIR)
-        outfile = os.path.join(CACHE_DIR, 'deps.json')
-        with open(outfile, 'w') as outfile:
-            json.dump(all_deps, outfile)
+        tracer.write_depcache(all_deps)
+
+        System.check_needs_update('albums/js/album', node_path=node_path)

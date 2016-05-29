@@ -1,16 +1,16 @@
 from __future__ import unicode_literals
 
-import logging
 import io
+import json
+import logging
 import os
 import posixpath
 import subprocess
 
+from django.conf import settings
 from django.utils.encoding import force_text
 
 import semantic_version
-
-from .conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +18,11 @@ logger = logging.getLogger(__name__)
 JSPM_LOG_VERSION = semantic_version.Version('0.16.3')
 
 SOURCEMAPPING_URL_COMMENT = b'//# sourceMappingURL='
+
+NODE_ENV_VAR = 'NODE_PATH'
+
+# TODO: configurable
+CACHE_DIR = os.path.join(settings.ROOT_DIR, 'cache', 'systemjs')
 
 
 class BundleError(OSError):
@@ -118,6 +123,65 @@ class System(object):
         bundle_cmd = 'bundle-sfx' if sfx else 'bundle'
         cmd = '{jspm} ' + bundle_cmd + ' {app} {outfile}'
         return system.command(cmd)
+
+    @classmethod
+    def check_needs_update(cls, app, node_path=None):
+        tracer = SystemTracer(node_path=node_path)
+        deps = tracer.trace(app)
+        cached_deps = tracer.load_depcache(app)
+        if deps == cached_deps:
+            # mtimes and trees match, check the hashes...
+            return False
+        return True
+
+
+class SystemTracer(object):
+
+    def __init__(self, node_path=None):
+        node_env = os.environ.copy()
+        if node_path and NODE_ENV_VAR not in node_env:
+            node_env[NODE_ENV_VAR] = node_path
+        self.env = node_env
+        self.name = 'deps.json'
+
+    @property
+    def cache_file_path(self):
+        if not os.path.exists(CACHE_DIR):
+            os.makedirs(CACHE_DIR)
+        return os.path.join(CACHE_DIR, self.name)
+
+    def trace(self, app):
+        process = subprocess.Popen(
+            "trace-deps.js {}".format(app), shell=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            env=self.env
+        )
+        out, err = process.communicate()
+        return json.loads(out)
+
+    def write_depcache(self, app_deps):  # TODO: use storage
+        all_deps = {
+            'version': 1,
+            'packages': app_deps,
+            'aggregated': {}
+        }
+
+        for pkg_deptree in app_deps.values():
+            all_deps['aggregated'].update(pkg_deptree)
+
+        with open(self.cache_file_path, 'w') as outfile:
+            json.dump(all_deps, outfile)
+
+    def load_depcache(self, app):
+        # cache in memory for faster lookup
+        if not hasattr(self, '_depcache'):
+            with open(self.cache_file_path, 'r') as infile:
+                self._depcache = json.load(infile)
+
+        if self._depcache.get('version') == 1:
+            return self._depcache['packages'].get(app)
+
+        raise NotImplementedError
 
 
 def find_sourcemap_comment(filepath, block_size=100):

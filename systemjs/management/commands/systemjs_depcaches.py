@@ -50,4 +50,5 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
 
         tracer.write_depcache(all_deps)
 
-        System.check_needs_update('albums/js/album', node_path=node_path)
+        needs_update = System.check_needs_update('albums/js/album', node_path=node_path)
+        self.stdout.write(str(needs_update))

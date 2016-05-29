@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import hashlib
 import io
 import json
 import logging
@@ -8,6 +9,7 @@ import posixpath
 import subprocess
 
 from django.conf import settings
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.utils.encoding import force_text
 
 import semantic_version
@@ -131,7 +133,8 @@ class System(object):
         cached_deps = tracer.load_depcache(app)
         if deps == cached_deps:
             # mtimes and trees match, check the hashes...
-            return False
+            if tracer.hashes_match(deps):
+                return False
         return True
 
 
@@ -143,6 +146,7 @@ class SystemTracer(object):
             node_env[NODE_ENV_VAR] = node_path
         self.env = node_env
         self.name = 'deps.json'
+        self.storage = staticfiles_storage
 
     @property
     def cache_file_path(self):
@@ -159,15 +163,25 @@ class SystemTracer(object):
         out, err = process.communicate()
         return json.loads(out)
 
+    def get_hash(self, path):
+        md5 = hashlib.md5()
+        with self.storage.open(path) as infile:
+            for chunk in infile.chunks():
+                md5.update(chunk)
+        return md5.hexdigest()
+
     def write_depcache(self, app_deps):  # TODO: use storage
         all_deps = {
             'version': 1,
             'packages': app_deps,
-            'aggregated': {}
+            'hashes': {}
         }
 
         for pkg_deptree in app_deps.values():
-            all_deps['aggregated'].update(pkg_deptree)
+            for module, info in pkg_deptree.items():
+                path = info['path']
+                if path not in all_deps['hashes']:
+                    all_deps['hashes'][path] = self.get_hash(path)
 
         with open(self.cache_file_path, 'w') as outfile:
             json.dump(all_deps, outfile)
@@ -182,6 +196,28 @@ class SystemTracer(object):
             return self._depcache['packages'].get(app)
 
         raise NotImplementedError
+
+    def load_hashes(self):
+        if not hasattr(self, '_depcache'):
+            with open(self.cache_file_path, 'r') as infile:
+                self._depcache = json.load(infile)
+
+        if self._depcache.get('version') == 1:
+            return self._depcache['hashes']
+
+        raise NotImplementedError
+
+    def hashes_match(self, dep_tree):
+        """
+        Compares the app deptree file hashes with the hashes stored in the
+        cache.
+        """
+        hashes = self.load_hashes()
+        for module, info in dep_tree.items():
+            md5 = self.get_hash(info['path'])
+            if md5 != hashes[info['path']]:
+                return False
+        return True
 
 
 def find_sourcemap_comment(filepath, block_size=100):

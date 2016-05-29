@@ -25,5 +25,5 @@ builder.trace(module).then(function(trace) {
             path: trace[module].path
         };
     }
-    process.stdout.write(JSON.stringify(deps, null, 2));
+    process.stdout.write(JSON.stringify(deps, null));
 });

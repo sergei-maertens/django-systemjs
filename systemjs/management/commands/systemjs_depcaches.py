@@ -1,17 +1,14 @@
 from __future__ import unicode_literals
 
-import json
-import os
-
 from django.core.management.base import BaseCommand
 from django.core.management.utils import handle_extensions
 
-from systemjs.base import System, SystemTracer
+from systemjs.base import SystemTracer
 from ._package_discovery import TemplateDiscoveryMixin
 
 
 class Command(TemplateDiscoveryMixin, BaseCommand):
-    help = "Writes the depcache for all discovered modules"
+    help = "Writes the depcache for all discovered JS apps"
     requires_system_checks = False
 
     def add_arguments(self, parser):
@@ -43,12 +40,7 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
         node_path = './node_modules'  # FIXME: don't hardcode
         tracer = SystemTracer(node_path=node_path)
 
-        all_deps = {}
-        for app in all_apps:
-            deps = tracer.trace(app)
-            all_deps[app] = deps
-
+        all_deps = {
+            app: tracer.trace(app) for app in all_apps
+        }
         tracer.write_depcache(all_deps)
-
-        needs_update = System.check_needs_update('albums/js/album', node_path=node_path)
-        self.stdout.write(str(needs_update))

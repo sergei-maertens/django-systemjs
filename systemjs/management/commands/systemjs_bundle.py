@@ -79,7 +79,10 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
 
         # initialize SystemJS specific objects to process the bundles
         tracer = SystemTracer(node_path=options.get('node_path'))
-        system = System(**{opt: options.get(opt) for opt in system_options})
+        system_opts = {opt: options.get(opt) for opt in system_options}
+        system = System(**system_opts)
+
+        has_different_options = tracer.get_bundle_options() != system_opts
 
         # discover the apps being imported in the templates
         all_apps = self.find_apps(templates=options.get('templates'))
@@ -90,7 +93,7 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
         storage = FileSystemStorage(settings.STATIC_ROOT, base_url=settings.STATIC_URL)
         for app in all_apps:
             # do we need to generate the bundle for this app?
-            if self.minimal and not tracer.check_needs_update(app):
+            if self.minimal and not (has_different_options or tracer.check_needs_update(app)):
                 self.stdout.write('Checked bundle for app \'{app}\', no changes found'.format(app=app))
                 continue
 
@@ -104,7 +107,7 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
         if self.minimal and bundled_files:
             self.stdout.write('Generating the new depcache and writing to file...')
             all_deps = {app: tracer.trace(app) for app in all_apps}
-            tracer.write_depcache(all_deps)
+            tracer.write_depcache(all_deps, system_opts)
 
         if self.post_process and hasattr(self.storage, 'post_process'):
             # post-process system.js if it's within settings.STATIC_ROOT

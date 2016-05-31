@@ -220,11 +220,12 @@ class SystemTracer(object):
                 md5.update(chunk)
         return md5.hexdigest()
 
-    def write_depcache(self, app_deps):  # TODO: use storage
+    def write_depcache(self, app_deps, bundle_options):  # TODO: use storage
         all_deps = {
             'version': 1,
             'packages': app_deps,
-            'hashes': {}
+            'hashes': {},
+            'options': bundle_options,
         }
 
         for pkg_deptree in app_deps.values():
@@ -236,33 +237,38 @@ class SystemTracer(object):
         with open(self.cache_file_path, 'w') as outfile:
             json.dump(all_deps, outfile)
 
-    def load_depcache(self, app):
-        # cache in memory for faster lookup
+    @property
+    def cached_deps(self):
         if not hasattr(self, '_depcache'):
             with open(self.cache_file_path, 'r') as infile:
                 self._depcache = json.load(infile)
+        return self._depcache
 
-        if self._depcache.get('version') == 1:
-            return self._depcache['packages'].get(app)
+    def get_depcache(self, app):
+        # cache in memory for faster lookup
+        if self.cached_deps.get('version') == 1:
+            return self.cached_deps['packages'].get(app)
         else:
             raise NotImplementedError
 
-    def load_hashes(self):
-        if not hasattr(self, '_depcache'):
-            with open(self.cache_file_path, 'r') as infile:
-                self._depcache = json.load(infile)
+    def get_hashes(self):
+        if self.cached_deps.get('version') == 1:
+            return self.cached_deps['hashes']
+        else:
+            raise NotImplementedError
 
-        if self._depcache.get('version') == 1:
-            return self._depcache['hashes']
-
-        raise NotImplementedError
+    def get_bundle_options(self):
+        if self.cached_deps.get('version') == 1:
+            return self.cached_deps.get('options')
+        else:
+            raise NotImplementedError
 
     def hashes_match(self, dep_tree):
         """
         Compares the app deptree file hashes with the hashes stored in the
         cache.
         """
-        hashes = self.load_hashes()
+        hashes = self.get_hashes()
         for module, info in dep_tree.items():
             md5 = self.get_hash(info['path'])
             if md5 != hashes[info['path']]:
@@ -270,7 +276,7 @@ class SystemTracer(object):
         return True
 
     def check_needs_update(self, app):
-        cached_deps = self.load_depcache(app)
+        cached_deps = self.get_depcache(app)
         deps = self.trace(app)
         # no re-bundle needed if the trees, mtimes and file hashes match
         if deps == cached_deps and self.hashes_match(deps):

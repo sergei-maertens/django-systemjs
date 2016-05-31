@@ -66,6 +66,14 @@ class System(object):
         bundle = SystemBundle(self, app, **self.opts)
         return bundle.bundle()
 
+    @staticmethod
+    def get_bundle_path(app):
+        """
+        Returns the path relative to STATIC_URL for the bundle for app.
+        """
+        bundle = SystemBundle(None, app)
+        return bundle.get_paths()[1]
+
 
 class SystemBundle(object):
     """
@@ -103,8 +111,8 @@ class SystemBundle(object):
         self.stdout = self.stdin = self.stderr = subprocess.PIPE
 
     def get_outfile(self):
-        self.js_file = '{app}{ext}'.format(app=self.app, ext='.js' if self.needs_ext() else '')
-        outfile = os.path.join(settings.STATIC_ROOT, settings.SYSTEMJS_OUTPUT_DIR, self.js_file)
+        js_file = '{app}{ext}'.format(app=self.app, ext='.js' if self.needs_ext() else '')
+        outfile = os.path.join(settings.STATIC_ROOT, settings.SYSTEMJS_OUTPUT_DIR, js_file)
         return outfile
 
     def get_paths(self):

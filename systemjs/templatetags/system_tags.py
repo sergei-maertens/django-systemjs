@@ -30,7 +30,7 @@ class SystemImportNode(template.Node):
             return tpl.format(app=module_path)
 
         # else: create a bundle
-        rel_path = System.bundle(module_path)
+        rel_path = System.get_bundle_path(module_path)
         url = staticfiles_storage.url(rel_path)
         return """<script type="text/javascript" src="{url}"></script>""".format(url=url)
 

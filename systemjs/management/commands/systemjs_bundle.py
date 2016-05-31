@@ -8,7 +8,6 @@ from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.management.base import BaseCommand
-from django.core.management.utils import handle_extensions
 from django.core.files.storage import FileSystemStorage
 
 from systemjs.base import System, SystemTracer
@@ -31,6 +30,8 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
             self.stdout.write(msg)
 
     def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser)
+
         parser.add_argument(
             '--sfx',
             action='store_true', dest='sfx',
@@ -42,38 +43,20 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
         parser.add_argument('--minify', action='store_true', help='Let jspm minify the bundle')
         parser.add_argument('--minimal', action='store_true', help='Only (re)bundle if changes detected')
 
-        tpl_group = parser.add_mutually_exclusive_group()
-        tpl_group.add_argument(
-            '--extension', '-e', dest='extensions',
-            help='The file extension(s) to examine (default: "html"). Separate '
-                 'multiple extensions with commas, or use -e multiple times.',
-            action='append')
-        tpl_group.add_argument(
-            '--template', '-t', dest='templates',
-            help='The templates to examine. Separate multiple template names with'
-                 'commas, or use -t multiple times',
-            action='append')
-
-        parser.add_argument(
-            '--symlinks', '-s', action='store_true', dest='symlinks',
-            default=False, help='Follows symlinks to directories when examining '
-                                'source code and templates for SystemJS imports.')
         parser.add_argument(
             '--no-post-process',
             action='store_false', dest='post_process', default=True,
             help="Do NOT post process collected files.")
 
     def handle(self, **options):
-        self.symlinks = options.get('symlinks')
+        super(Command, self).handle(**options)
+
         self.post_process = options['post_process']
         self.minimal = options.get('minimal')
 
         self.verbosity = 2
         self.storage = staticfiles_storage
         self.storage.systemjs_bundling = True  # set flag to check later
-
-        extensions = options.get('extensions') or ['html']
-        self.extensions = handle_extensions(extensions)
 
         system_options = ['minimal', 'minify', 'sfx']
 

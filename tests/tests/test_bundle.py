@@ -35,11 +35,21 @@ class BundleTests(SimpleTestCase):
             pass
 
     @override_settings(SYSTEMJS_OUTPUT_DIR='SYSJS')
-    def test_bundle_result(self):
+    @mock.patch('subprocess.Popen')
+    def test_bundle_result(self, mock_subproc_popen):
         """
         Test that bundling an app returns the correct relative path.
         """
-        path = System.bundle('app/dummy')
+        system = System()
+
+        def side_effect(*args, **kwargs):
+            _bundle('app/dummy')
+            return ('output', 'error')
+
+        # mock Popen/communicate
+        mock_Popen(mock_subproc_popen, side_effect=side_effect)
+
+        path = system.bundle('app/dummy')
         expected_path = os.path.join(settings.SYSTEMJS_OUTPUT_DIR, 'app/dummy.js')
         self.assertEqual(path, expected_path)
 
@@ -58,7 +68,8 @@ class BundleTests(SimpleTestCase):
         process_mock = mock_Popen(mock_subproc_popen, side_effect=side_effect)
 
         # Bundle app/dummy
-        System.bundle(app_name, force=True)
+        system = System()
+        system.bundle(app_name)
         self.assertEqual(mock_subproc_popen.call_count, 1)
         command = mock_subproc_popen.call_args[0][0]
         outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/{0}.js'.format(app_name))
@@ -79,7 +90,8 @@ class BundleTests(SimpleTestCase):
         process_mock = mock_Popen(mock_subproc_popen)
 
         # Bundle app/dummy
-        System.bundle('app/dummy', sfx=True, force=True)
+        system = System(sfx=True)
+        system.bundle('app/dummy')
         self.assertEqual(mock_subproc_popen.call_count, 1)
         command = mock_subproc_popen.call_args[0][0]
         outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/app/dummy.js')
@@ -103,7 +115,8 @@ class BundleTests(SimpleTestCase):
         process_mock = mock_Popen(mock_subproc_popen, side_effect=side_effect)
 
         # Bundle app/dummy
-        System.bundle('app/dummy', minify=True, force=True)
+        system = System(minify=True)
+        system.bundle('app/dummy')
         self.assertEqual(mock_subproc_popen.call_count, 1)
         command = mock_subproc_popen.call_args[0][0]
         outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/app/dummy.js')
@@ -118,7 +131,8 @@ class BundleTests(SimpleTestCase):
 
         mock_Popen(mock, side_effect=oserror)
         with self.assertRaises(BundleError):
-            System.bundle('app/dummy', force=True)
+            system = System()
+            system.bundle('app/dummy')
 
     @mock.patch('subprocess.Popen')
     def test_ioerror_caught(self, mock):
@@ -128,7 +142,8 @@ class BundleTests(SimpleTestCase):
 
         mock_Popen(mock, side_effect=ioerror)
         with self.assertRaises(BundleError):
-            System.bundle('app/dummy', force=True)
+            system = System()
+            system.bundle('app/dummy')
 
 
 class JSPMIntegrationTests(SimpleTestCase):
@@ -142,7 +157,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         return_value = (b'0.15.7\nRunning against global jspm install.\n', '')
         process_mock = mock_Popen(mock_subproc_popen, return_value=return_value)
 
-        system = System('app/dummy')
+        system = System()
 
         # Call version
         version = system.get_jspm_version({'jspm': 'jspm'})
@@ -162,7 +177,7 @@ class JSPMIntegrationTests(SimpleTestCase):
         return_value = (b'gibberish', 'a jspm error')
         process_mock = mock_Popen(mock_subproc_popen, return_value=return_value)
 
-        system = System('app/dummy')
+        system = System()
 
         # Call version
         with self.assertRaises(BundleError):
@@ -195,7 +210,8 @@ class JSPMIntegrationTests(SimpleTestCase):
         process_mock = mock_Popen(mock_subproc_popen, side_effect=side_effect)
 
         # Bundle app/dummy
-        System.bundle(app_name, force=True)
+        system = System()
+        system.bundle(app_name)
         self.assertEqual(mock_subproc_popen.call_count, 1)
 
         command = mock_subproc_popen.call_args
@@ -238,7 +254,8 @@ class JSPMIntegrationTests(SimpleTestCase):
 
         # Bundle app/dummy
         with self.assertRaises(BundleError) as ctx:
-            System.bundle(app_name, force=True)
+            system = System()
+            system.bundle(app_name)
 
         self.assertEqual(ctx.exception.args[0], "Could not bundle \'app/dummy\': \nSomething went wrong")
 
@@ -263,7 +280,8 @@ class JSPMIntegrationTests(SimpleTestCase):
         mock_Popen(mock_subproc_popen, side_effect=side_effect)
 
         # Bundle app/dummy
-        System.bundle(app_name, force=True)
+        system = System()
+        system.bundle(app_name)
         outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/{0}.js'.format(app_name))
         with open(outfile, 'r') as of:
             js = of.read()
@@ -288,7 +306,8 @@ class JSPMIntegrationTests(SimpleTestCase):
         mock_Popen(mock_subproc_popen, side_effect=side_effect)
 
         # Bundle app/dummy
-        System.bundle(app_name, force=True)
+        system = System()
+        system.bundle(app_name)
         outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/{0}.js'.format(app_name))
         with open(outfile, 'r') as of:
             js = of.read()
@@ -323,7 +342,8 @@ proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
         mock_Popen(mock_subproc_popen, side_effect=side_effect)
 
         # Bundle app/dummy
-        System.bundle(app_name, force=True)
+        system = System()
+        system.bundle(app_name)
         outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/{0}.js'.format(app_name))
         with open(outfile, 'r') as of:
             js = of.read()

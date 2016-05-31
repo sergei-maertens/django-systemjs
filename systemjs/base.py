@@ -23,9 +23,6 @@ SOURCEMAPPING_URL_COMMENT = b'//# sourceMappingURL='
 
 NODE_ENV_VAR = 'NODE_PATH'
 
-# TODO: configurable
-CACHE_DIR = os.path.join(settings.ROOT_DIR, 'cache', 'systemjs')
-
 
 class BundleError(OSError):
     pass
@@ -133,7 +130,7 @@ class SystemBundle(object):
                 return True
         return False
 
-    def bundle(self, force=False):
+    def bundle(self):
         """
         Bundle the app and return the static url to the bundle.
         """
@@ -191,9 +188,9 @@ class SystemTracer(object):
 
     @property
     def cache_file_path(self):
-        if not os.path.exists(CACHE_DIR):
-            os.makedirs(CACHE_DIR)
-        return os.path.join(CACHE_DIR, self.name)
+        if not os.path.exists(settings.SYSTEMJS_CACHE_DIR):
+            os.makedirs(settings.SYSTEMJS_CACHE_DIR)
+        return os.path.join(settings.SYSTEMJS_CACHE_DIR, self.name)
 
     def trace(self, app):
         """

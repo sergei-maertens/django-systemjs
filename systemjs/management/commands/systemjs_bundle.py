@@ -65,7 +65,7 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
         system_opts = {opt: options.get(opt) for opt in system_options}
         system = System(**system_opts)
 
-        has_different_options = tracer.get_bundle_options() != system_opts
+        has_different_options = self.minimal and tracer.get_bundle_options() != system_opts
 
         # discover the apps being imported in the templates
         all_apps = self.find_apps(templates=options.get('templates'))

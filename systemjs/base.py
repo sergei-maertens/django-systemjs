@@ -246,19 +246,19 @@ class SystemTracer(object):
         if self.cached_deps.get('version') == 1:
             return self.cached_deps['packages'].get(app)
         else:
-            raise NotImplementedError
+            raise NotImplementedError  # noqa
 
     def get_hashes(self):
         if self.cached_deps.get('version') == 1:
             return self.cached_deps['hashes']
         else:
-            raise NotImplementedError
+            raise NotImplementedError  # noqa
 
     def get_bundle_options(self):
         if self.cached_deps.get('version') == 1:
             return self.cached_deps.get('options')
         else:
-            raise NotImplementedError
+            raise NotImplementedError  # noqa
 
     def hashes_match(self, dep_tree):
         """

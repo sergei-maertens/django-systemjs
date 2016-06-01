@@ -274,23 +274,25 @@ class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
         self.assertEqual(_num_files(base), 0)
 
         call_command('collectstatic', link=True, interactive=False, stdout=self.out, sterr=self.err)
-        # dummy.js + dummy.hash.js + staticfiles.json
-        self.assertEqual(_num_files(base), 3)
+        # dummy.js + dummy.hash.js + staticfiles.json + dependency.js + dependency.hash.js
+        self.assertEqual(_num_files(base), 5)
         with open(os.path.join(base, 'staticfiles.json')) as infile:
             manifest = json.loads(infile.read())
         self.assertEqual(manifest['paths'], {
-            'app/dummy.js': 'app/dummy.65d75b61cae0.js'
+            'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'app/dependency.js': 'app/dependency.d41d8cd98f00.js'
         })
 
         # bundle the files and check that the bundled file is post-processed
         call_command('systemjs_bundle', stdout=self.out, stderr=self.err)
 
         # + bundled file + post-processed file (not staticfiles.json!)
-        self.assertEqual(_num_files(base), 5)
+        self.assertEqual(_num_files(base), 7)
         with open(os.path.join(base, 'staticfiles.json')) as infile:
             manifest = json.loads(infile.read())
         self.assertEqual(manifest['paths'], {
             'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
             'SYSTEMJS/app/dummy.js': 'SYSTEMJS/app/dummy.5d1dad25dae3.js'
         })
 

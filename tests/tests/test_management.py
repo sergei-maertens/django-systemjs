@@ -371,3 +371,20 @@ class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
 
         with self.assertRaises(CommandError):
             call_command('systemjs_bundle')
+
+
+class ShowPackagesTests(SimpleTestCase):
+
+    def test_command(self):
+        """
+        Check that listing the packages works as expected.
+        """
+        stdout = StringIO()
+        stderr = StringIO()
+        call_command('systemjs_show_packages', stdout=stdout, sterr=stderr)
+        stderr.seek(0)
+        stdout.seek(0)
+        self.assertEqual(stderr.read(), '')  # no errors
+        output = stdout.read()
+        self.assertIn('base.html', output)
+        self.assertIn('app/dummy', output)

@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.core.management.base import BaseCommand
 
-from ._package_discovery import TemplateDiscoveryMixin
+from ._mixins import TemplateDiscoveryMixin
 
 
 class Command(TemplateDiscoveryMixin, BaseCommand):

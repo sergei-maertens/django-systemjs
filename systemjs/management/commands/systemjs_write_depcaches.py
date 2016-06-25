@@ -3,8 +3,7 @@ from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
 
 from systemjs.base import SystemTracer
-from ._mixins import BundleOptionsMixin
-from ._package_discovery import TemplateDiscoveryMixin
+from ._mixins import BundleOptionsMixin, TemplateDiscoveryMixin
 
 
 class Command(BundleOptionsMixin, TemplateDiscoveryMixin, BaseCommand):

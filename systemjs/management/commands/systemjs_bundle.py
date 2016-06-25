@@ -12,8 +12,7 @@ from django.core.files.storage import FileSystemStorage
 
 from systemjs.base import System, SystemTracer
 from systemjs.jspm import find_systemjs_location
-from ._mixins import BundleOptionsMixin
-from ._package_discovery import TemplateDiscoveryMixin
+from ._mixins import BundleOptionsMixin, TemplateDiscoveryMixin
 
 
 logger = logging.getLogger(__name__)

@@ -12,13 +12,14 @@ from django.core.files.storage import FileSystemStorage
 
 from systemjs.base import System, SystemTracer
 from systemjs.jspm import find_systemjs_location
+from ._mixins import BundleOptionsMixin
 from ._package_discovery import TemplateDiscoveryMixin
 
 
 logger = logging.getLogger(__name__)
 
 
-class Command(TemplateDiscoveryMixin, BaseCommand):
+class Command(BundleOptionsMixin, TemplateDiscoveryMixin, BaseCommand):
     help = "Find {% systemjs_import %} tags and bundle the JS apps."
     requires_system_checks = False
 
@@ -31,17 +32,6 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
-
-        parser.add_argument(
-            '--sfx',
-            action='store_true', dest='sfx',
-            help="Generate self-executing bundles.")
-
-        parser.add_argument(
-            '--node-path', default='./node_modules',
-            help='Path to the project `node_modules` directory')
-        parser.add_argument('--minify', action='store_true', help='Let jspm minify the bundle')
-        parser.add_argument('--minimal', action='store_true', help='Only (re)bundle if changes detected')
 
         parser.add_argument(
             '--no-post-process',
@@ -58,11 +48,9 @@ class Command(TemplateDiscoveryMixin, BaseCommand):
         self.storage = staticfiles_storage
         self.storage.systemjs_bundling = True  # set flag to check later
 
-        system_options = ['minimal', 'minify', 'sfx']
-
         # initialize SystemJS specific objects to process the bundles
         tracer = SystemTracer(node_path=options.get('node_path'))
-        system_opts = {opt: options.get(opt) for opt in system_options}
+        system_opts = self.get_system_opts(options)
         system = System(**system_opts)
 
         has_different_options = self.minimal and tracer.get_bundle_options() != system_opts

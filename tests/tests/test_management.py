@@ -388,3 +388,27 @@ class ShowPackagesTests(SimpleTestCase):
         output = stdout.read()
         self.assertIn('base.html', output)
         self.assertIn('app/dummy', output)
+
+
+class WriteDepCachesTests(SimpleTestCase):
+
+    @mock.patch('systemjs.base.SystemTracer.write_depcache')
+    @mock.patch('systemjs.base.SystemTracer.trace')
+    def test_command(self, mock_trace, mock_write_depcache):
+        """
+        Check that writing the depcaches works as expected.
+        """
+        mock_trace.return_value = {}
+        stdout = StringIO()
+        stderr = StringIO()
+        call_command('systemjs_write_depcaches', stdout=stdout, sterr=stderr)
+        stderr.seek(0)
+        stdout.seek(0)
+        self.assertEqual(stderr.read(), '')  # no errors
+        self.assertEqual(stdout.read(), '')  # no output either
+
+        mock_trace.assert_called_once_with('app/dummy')
+        mock_write_depcache.assert_called_once_with(
+            {'app/dummy': {}},
+            {'minimal': False, 'sfx': False, 'minify': False}
+        )

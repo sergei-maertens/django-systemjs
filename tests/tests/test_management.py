@@ -6,6 +6,7 @@ import mock
 import os
 import shutil
 import tempfile
+import time
 try:  # Py2
     from StringIO import StringIO
 except ImportError:  # Py3
@@ -75,6 +76,33 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         self.out = StringIO()
         self.err = StringIO()
         self._clear_static()
+
+        self.now = int(time.time())
+
+    def _create_deps_json(self, deps=None, **overrides):
+        deps = deps or {
+            'version': 1,
+            'packages': {
+                'app/dummy': {
+                    'app/dummy.js': {
+                        'name': 'app/dummy.js',
+                        'timestamp': self.now,
+                        'path': 'app/dummy.js',
+                    }
+                }
+            },
+            'hashes': {
+                'app/dummy.js': '65d75b61cae058018d3de1fa433a43da',
+            },
+            'options': {
+                'minimal': True,
+                'sfx': False,
+                'minify': False,
+            }
+        }
+        deps.update(**overrides)
+        with open(os.path.join(settings.SYSTEMJS_CACHE_DIR, 'deps.json'), 'w') as _file:
+            json.dump(deps, _file)
 
     def test_no_arguments(self, bundle_mock):
         """
@@ -161,6 +189,46 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
             call_command('systemjs_bundle', '--template', 'nothere.html', stdout=self.out, stderr=self.err)
         self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
         self.assertEqual(bundle_mock.call_count, 0)
+
+    @override_settings(SYSTEMJS_CACHE_DIR=tempfile.mkdtemp())
+    @mock.patch('systemjs.base.SystemTracer.trace')
+    def test_minimal_bundle(self, trace_mock, bundle_mock):
+        """
+        Assert that minimal bundles are generated only if needed
+        """
+        trace_mock.return_value = {
+            'app/dummy.js': {
+                'name': 'app/dummy.js',
+                'timestamp': self.now,
+                'path': 'app/dummy.js',
+            }
+        }
+        self._create_deps_json()
+
+        call_command('collectstatic', link=True, interactive=False, stdout=self.out, sterr=self.err)
+        call_command('systemjs_bundle', '--minimal', stdout=self.out, stderr=self.err)
+        # no new bundles should have been created
+        self.assertEqual(bundle_mock.call_count, 0)
+
+    @override_settings(SYSTEMJS_CACHE_DIR=tempfile.mkdtemp())
+    @mock.patch('systemjs.base.SystemTracer.trace')
+    def test_minimal_bundle_different_options(self, trace_mock, bundle_mock):
+        """
+        Assert that minimal bundles are generated only if needed
+        """
+        trace_mock.return_value = {
+            'app/dummy.js': {
+                'name': 'app/dummy.js',
+                'timestamp': self.now,
+                'path': 'app/dummy.js',
+            }
+        }
+        self._create_deps_json()
+
+        call_command('collectstatic', link=True, interactive=False, stdout=self.out, sterr=self.err)
+        call_command('systemjs_bundle', '--minimal', '--sfx', stdout=self.out, stderr=self.err)
+        # no new bundles should have been created
+        self.assertEqual(bundle_mock.call_count, 1)
 
 
 @override_settings(STATIC_ROOT=tempfile.mkdtemp())

@@ -210,6 +210,28 @@ Options
 
   .. note:: Added in 1.4.
 
+* ``--minimal``: the minimal option will only rebundle apps that have changed. If
+  you have multiple ``{% systemjs_import <...> %}`` statements, and only one app
+  was changed, this can speed up the total bundle time. Comparison happens based
+  on mtimes and md5 hashes of the involved files.
+
+  .. note::
+      Added in 1.4.
+
+      The first time you use the ``--minimal`` option, you will get an error saying
+      that the ``deps.json`` file cannot be located. This is because we have never
+      written the dependency tree yet.
+
+      You can do this manually the first time by executing the ``systemjs_write_depcaches``
+      command, with the regular bundle options, for example:
+
+      .. code-block:: sh
+
+          python manage.py systemjs_write_depcaches --sfx --minimal --minify
+
+      It's important to use the same options as when running ``systemjs_bundle``, since
+      a difference in bundle options will trigger a re-bundle.
+
 
 Example workflow
 ================

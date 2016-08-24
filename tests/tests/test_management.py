@@ -195,6 +195,8 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
     def test_minimal_bundle(self, trace_mock, bundle_mock):
         """
         Assert that minimal bundles are generated only if needed
+
+        This is the case where the bundle file does not exist.
         """
         trace_mock.return_value = {
             'app/dummy.js': {
@@ -204,6 +206,32 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
             }
         }
         self._create_deps_json()
+
+        call_command('collectstatic', link=True, interactive=False, stdout=self.out, sterr=self.err)
+        call_command('systemjs_bundle', '--minimal', stdout=self.out, stderr=self.err)
+        # no new bundles should have been created
+        self.assertEqual(bundle_mock.call_count, 1)
+
+    @override_settings(SYSTEMJS_CACHE_DIR=tempfile.mkdtemp())
+    @mock.patch('systemjs.base.SystemTracer.trace')
+    def test_minimal_bundle_initial_exists(self, trace_mock, bundle_mock):
+        """
+        Assert that minimal bundles are generated only if needed
+        """
+        trace_mock.return_value = {
+            'app/dummy.js': {
+                'name': 'app/dummy.js',
+                'timestamp': self.now,
+                'path': 'app/dummy.js',
+            }
+        }
+        self._create_deps_json()
+
+        # put the 'bundle' there
+        dirs = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS', 'app')
+        os.makedirs(dirs)
+        with open(os.path.join(dirs, 'dummy.js'), 'w') as bundle:
+            bundle.write('I am bundle')
 
         call_command('collectstatic', link=True, interactive=False, stdout=self.out, sterr=self.err)
         call_command('systemjs_bundle', '--minimal', stdout=self.out, stderr=self.err)

@@ -204,7 +204,7 @@ class SystemTracer(object):
             process = subprocess.Popen(
                 "trace-deps.js {}".format(app), shell=True,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                env=self.env
+                env=self.env, universal_newlines=True
             )
             out, err = process.communicate()
             self._trace_cache[app] = json.loads(out)

@@ -7,7 +7,7 @@ import os
 import subprocess
 
 
-VERSION = (1, 4, 0, 'beta', 0)
+VERSION = (1, 4, 0, 'beta', 1)
 
 
 default_app_config = 'systemjs.apps.SystemJSConfig'

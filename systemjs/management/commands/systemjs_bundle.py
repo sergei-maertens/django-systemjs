@@ -64,8 +64,12 @@ class Command(BundleOptionsMixin, TemplateDiscoveryMixin, BaseCommand):
         for app in all_apps:
             # do we need to generate the bundle for this app?
             if self.minimal and not (has_different_options or tracer.check_needs_update(app)):
-                self.stdout.write('Checked bundle for app \'{app}\', no changes found'.format(app=app))
-                continue
+                # check if the bundle actually exists - if it doesn't, don't skip it
+                # this happens on the first ever bundle
+                bundle_path = System.get_bundle_path(app)
+                if self.storage.exists(bundle_path):
+                    self.stdout.write('Checked bundle for app \'{app}\', no changes found'.format(app=app))
+                    continue
 
             rel_path = system.bundle(app)
             if not self.storage.exists(rel_path):

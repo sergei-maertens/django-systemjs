@@ -3,7 +3,7 @@ import os
 import sys
 
 
-def runtests(*args):
+def runtests(*tests):
     test_dir = os.path.dirname(__file__)
     sys.path.insert(0, test_dir)
     os.environ['DJANGO_SETTINGS_MODULE'] = 'tests.settings'
@@ -16,9 +16,10 @@ def runtests(*args):
 
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=1, interactive=True)
-    if not args:
-        args = (['.'],)
-    failures = test_runner.run_tests(*args)
+
+    if not tests:
+        tests = (['.'],)
+    failures = test_runner.run_tests(*tests)
     sys.exit(failures)
 
 

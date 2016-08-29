@@ -35,8 +35,8 @@ and ties in perfectly with ``django.contrib.staticfiles``.
 Requirements
 ============
 
-Django-Systemjs runs on Python 2.7, 3.3, 3.4 and 3.5. Django versions 1.8 and
-1.9 are supported.
+Django-Systemjs runs on Python 2.7, 3.3, 3.4 and 3.5. Django versions 1.8, 1.9 and
+1.10 are supported.
 
 
 

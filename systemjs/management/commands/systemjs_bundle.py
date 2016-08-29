@@ -98,7 +98,7 @@ class Command(BaseCommand):
         self.extensions = handle_extensions(extensions)
 
         # find all template files
-        all_apps = []
+        all_apps = set()
         if not options.get('templates'):
 
             all_files = self.discover_templates()
@@ -109,8 +109,8 @@ class Command(BaseCommand):
                 for t in Lexer(src_data).tokenize():
                     if t.token_type == TOKEN_BLOCK:
                         imatch = SYSTEMJS_TAG_RE.match(t.contents)
-                        if imatch:
-                            all_apps.append(imatch.group('app'))
+                        if imatch and imatch.group('app') not in all_apps:
+                            all_apps.add(imatch.group('app'))
         else:
             for tpl in options.get('templates'):
                 try:
@@ -126,7 +126,8 @@ class Command(BaseCommand):
                                 tpl=tpl, ctx=RESOLVE_CONTEXT)
                         ))
                         continue
-                    all_apps.append(app)
+                    if app not in all_apps:
+                        all_apps.add(app)
 
         bundled_files = OrderedDict()
         # FIXME: this should be configurable, if people use S3BotoStorage for example, it needs to end up there

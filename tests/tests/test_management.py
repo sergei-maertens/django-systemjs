@@ -17,6 +17,8 @@ from django.test import SimpleTestCase, override_settings
 
 from semantic_version import Version
 
+from .helpers import add_tpl_dir
+
 
 JINJA_TEMPLATES = [{
     'BACKEND': 'django.template.backends.jinja2.Jinja2',
@@ -142,6 +144,41 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         # created one file + skipped post processing
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
         self.assertEqual(bundle_mock.call_count, 1)  # only one bundle call made
+
+    def test_templates_option(self, bundle_mock):
+        bundle_mock.side_effect = _bundle
+
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        call_command('systemjs_bundle', '--template', 'base.html', stdout=self.out, stderr=self.err)
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
+
+        self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=False))
+
+    def test_templates_option_wrong_tpl(self, bundle_mock):
+        bundle_mock.side_effect = _bundle
+
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        with self.assertRaises(CommandError):
+            call_command('systemjs_bundle', '--template', 'nothere.html', stdout=self.out, stderr=self.err)
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        self.assertEqual(bundle_mock.call_count, 0)
+
+    @add_tpl_dir(os.path.join(os.path.dirname(__file__), 'templates1'))
+    def test_same_bundle_multiple_templates(self, bundle_mock):
+        """
+        Test that a module is bundled only once if it appears in multiple
+        template files.
+        """
+        bundle_mock.side_effect = _bundle
+
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        call_command('systemjs_bundle', stdout=self.out, stderr=self.err)
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
+
+        # one app found in multiple templates -> should only be bundled once
+        self.assertEqual(bundle_mock.call_count, 1)
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=False))
 
 
 @override_settings(STATIC_ROOT=tempfile.mkdtemp())

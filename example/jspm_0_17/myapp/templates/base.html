@@ -1,0 +1,15 @@
+<!DOCTYPE html>{% load staticfiles system_tags %}
+<html>
+<head>
+    <title>Example app</title>
+</head>
+<body>
+    <h1>Example app</h1>
+    <div id="js-hook"></div>
+
+    <script src="{% static "jspm_packages/system.js" %}"></script>
+    <script src="{% static "jspm.browser.js" %}"></script>
+    <script src="{% static "jspm.config.js" %}"></script>
+    {% systemjs_import "jspm_0_17/main.js" %}
+</body>
+</html>

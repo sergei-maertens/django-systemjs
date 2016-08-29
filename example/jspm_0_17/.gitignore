@@ -1,0 +1,5 @@
+*.sqlite3
+
+staticfiles
+node_modules
+jspm_packages

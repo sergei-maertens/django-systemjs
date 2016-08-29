@@ -177,6 +177,10 @@ class SystemBundle(object):
         return rel_path
 
 
+class TraceError(Exception):
+    pass
+
+
 class SystemTracer(object):
 
     def __init__(self, node_path=None):
@@ -210,6 +214,8 @@ class SystemTracer(object):
                 env=self.env, universal_newlines=True, cwd=self._package_json_dir
             )
             out, err = process.communicate()
+            if err:
+                raise TraceError(err)
             self._trace_cache[app] = json.loads(out)
         return self._trace_cache[app]
 

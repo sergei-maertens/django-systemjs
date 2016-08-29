@@ -1,6 +1,15 @@
 Changelog
 =========
 
+1.3.3
+-----
+
+* Optimization: build a bundle only once. Before, if a bundle was used in
+  multiple templates, it would be bundled again for every appearance. Thanks to
+  **pcompassion** for the report (`#15`_).
+
+.. _#15: https://github.com/sergei-maertens/django-systemjs/issues/15
+
 1.3.2
 -----
 
@@ -31,7 +40,7 @@ Changelog
 
 Fixes loading of the configuration options in tests.
 
-In previous releases, using `django.test.utils.override_settings` in certain
+In previous releases, using ``django.test.utils.override_settings`` in certain
 ways happened before the django-systemjs settings were appended. This was
 probably only the case for Django < 1.9.
 
@@ -78,14 +87,14 @@ Fixes some mistakes from 0.3.3. Mondays...
 
 0.3.3
 -----
-Added post-processing of `jspm_packages/system.js` if it is within
-`settings.STATIC_ROOT`.
+Added post-processing of ``jspm_packages/system.js`` if it is within
+``settings.STATIC_ROOT``.
 
-This introduces a new setting: `SYSTEMJS_PACKAGE_JSON_DIR`. Set this to the path
-of the folder containing `package.json`. `package.json` will be inspected to
+This introduces a new setting: ``SYSTEMJS_PACKAGE_JSON_DIR``. Set this to the path
+of the folder containing ``package.json``. ``package.json`` will be inspected to
 figure out the install path of jspm - and only post-process if the latter path
-is within `settings.STATIC_ROOT`. By default, `settings.BASE_DIR` (provided by
-the default `django-admin.py startproject` template) will be chosen for this
+is within ``settings.STATIC_ROOT``. By default, ``settings.BASE_DIR`` (provided by
+the default ``django-admin.py startproject`` template) will be chosen for this
 directory.
 
 0.3.2
@@ -98,13 +107,13 @@ Fixed incorrect passing of the --log option.
 No API changes where made - this release is preparation for Django 1.9 and
 improves robustness of bundling.
 
-In version 0.16.3 `--log` was added to JSPM. This allows us to properly check
+In version 0.16.3 ``--log`` was added to JSPM. This allows us to properly check
 for build errors, where before you would find out the hard way. Build errors
 will now show as output from the management command.
 
 An check has been added to figure out the JSPM version. If you get a
-`BundleError` saying that the JSPM version could not be determined, check that
-`jspm` is available in your path or modify the `SYSTEMJS_JSPM_EXECUTABLE`
+``BundleError`` saying that the JSPM version could not be determined, check that
+``jspm`` is available in your path or modify the ``SYSTEMJS_JSPM_EXECUTABLE``
 setting accordingly.
 
 
@@ -112,7 +121,7 @@ setting accordingly.
 -----
 
 Changed the templatetag to add the .js extension. Existing code should still
-work, possibly you need to set System.defaultJSExtensions to `true`.
+work, possibly you need to set System.defaultJSExtensions to ``true``.
 
 
 .. note::

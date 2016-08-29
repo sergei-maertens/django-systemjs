@@ -14,6 +14,8 @@ from django.utils.encoding import force_text
 
 import semantic_version
 
+from .jspm import locate_package_json
+
 logger = logging.getLogger(__name__)
 
 
@@ -185,6 +187,7 @@ class SystemTracer(object):
         self.name = 'deps.json'
         self.storage = staticfiles_storage
         self._trace_cache = {}
+        self._package_json_dir = os.path.dirname(locate_package_json())
 
     @property
     def cache_file_path(self):
@@ -204,7 +207,7 @@ class SystemTracer(object):
             process = subprocess.Popen(
                 "trace-deps.js {}".format(app), shell=True,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                env=self.env, universal_newlines=True
+                env=self.env, universal_newlines=True, cwd=self._package_json_dir
             )
             out, err = process.communicate()
             self._trace_cache[app] = json.loads(out)

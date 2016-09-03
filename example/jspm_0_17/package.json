@@ -24,6 +24,7 @@
   "homepage": "https://github.com/sergei-maertens/django-systemjs#readme",
   "devDependencies": {
     "gulp": "^3.9.1",
+    "gulp-rename": "^1.2.2",
     "gulp-watch": "^4.3.5",
     "jspm": "^0.17.0-beta.28"
   },

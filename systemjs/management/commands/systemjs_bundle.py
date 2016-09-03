@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import os
 import logging
 from collections import OrderedDict
+from copy import copy
 
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
@@ -44,7 +45,7 @@ class Command(BundleOptionsMixin, TemplateDiscoveryMixin, BaseCommand):
         self.minimal = options.get('minimal')
 
         self.verbosity = 2
-        self.storage = staticfiles_storage
+        self.storage = copy(staticfiles_storage)
         self.storage.systemjs_bundling = True  # set flag to check later
 
         # initialize SystemJS specific objects to process the bundles
@@ -103,7 +104,6 @@ class Command(BundleOptionsMixin, TemplateDiscoveryMixin, BaseCommand):
                     self.stderr.write("")
                     raise processed
                 if processed:  # pragma: no cover
-                    self.log("Post-processed '%s' as '%s'" %
-                             (original_path, processed_path), level=1)
+                    self.log("Post-processed '%s' as '%s'" % (original_path, processed_path), level=1)
                 else:
                     self.log("Skipped post-processing '%s'" % original_path)  # pragma: no cover

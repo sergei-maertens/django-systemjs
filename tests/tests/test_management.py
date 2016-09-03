@@ -401,7 +401,7 @@ class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
         call_command('systemjs_bundle', stdout=self.out, stderr=self.err)
 
         # + bundled file + post-processed file (not staticfiles.json!)
-        self.assertEqual(_num_files(base), 7)
+        self.assertEqual(_num_files(base), 8)
         with open(os.path.join(base, 'staticfiles.json')) as infile:
             manifest = json.loads(infile.read())
         self.assertEqual(manifest['paths'], {
@@ -417,6 +417,71 @@ class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
 
         with self.assertRaises(CommandError):
             call_command('systemjs_bundle')
+
+    @mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+    def test_templates_option_retain_manifest(self, systemjs_mock, bundle_mock):
+        """
+        Issue #13: bundling full, followed by collectstatic, followed by
+        bundling a single template removes the bundle entries from the manifest
+        (staticfiles.json). This may not happen.
+
+        Reference: https://github.com/sergei-maertens/django-systemjs/issues/13#issuecomment-243968551
+        """
+        bundle_mock.side_effect = _bundle
+        systemjs_mock.return_value = '/non/existant/path/'
+
+        base = os.path.abspath(settings.STATIC_ROOT)
+        self.assertEqual(_num_files(base), 0)
+
+        call_command('collectstatic', interactive=False)
+
+        # dummy.js + dummy.hash.js + staticfiles.json + dependency.js + dependency.hash.js
+        self.assertEqual(_num_files(base), 5)
+        with open(os.path.join(base, 'staticfiles.json')) as infile:
+            manifest = json.loads(infile.read())
+        self.assertEqual(manifest['paths'], {
+            'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
+        })
+
+        # bundle the files and check that the bundled file is post-processed
+        call_command('systemjs_bundle', stdout=self.out, stderr=self.err)
+        # + 2 bundled files + 2 post-processed files (not staticfiles.json!) + systemjs manifest
+        self.assertEqual(_num_files(base), 8)
+        with open(os.path.join(base, 'staticfiles.json')) as infile:
+            manifest = json.loads(infile.read())
+        self.assertEqual(manifest['paths'], {
+            'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
+            'SYSTEMJS/app/dummy.js': 'SYSTEMJS/app/dummy.5d1dad25dae3.js',
+        })
+
+        # wipes the bundles from the manifest without the systemjs manifest mixin
+        with override_settings(STATICFILES_DIRS=[os.path.join(os.path.dirname(__file__), 'static1')]):
+            call_command('collectstatic', interactive=False)
+            self.assertEqual(_num_files(base), 10)
+            with open(os.path.join(base, 'staticfiles.json')) as infile:
+                manifest = json.loads(infile.read())
+
+            self.assertEqual(manifest['paths'], {
+                'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+                'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
+                'dummy2.js': 'dummy2.65d75b61cae0.js',
+            })
+
+            with add_tpl_dir(os.path.join(os.path.dirname(__file__), 'templates2')):
+                call_command('systemjs_bundle', '--template', 'extra.html', stdout=self.out, stderr=self.err)
+
+        with open(os.path.join(base, 'staticfiles.json')) as infile:
+            manifest = json.loads(infile.read())
+        self.assertEqual(_num_files(base), 12)
+        self.assertEqual(manifest['paths'], {
+            'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
+            'dummy2.js': 'dummy2.65d75b61cae0.js',
+            'SYSTEMJS/app/dummy.js': 'SYSTEMJS/app/dummy.5d1dad25dae3.js',
+            'SYSTEMJS/dummy2.js': 'SYSTEMJS/dummy2.5d1dad25dae3.js',
+        })
 
 
 class ShowPackagesTests(SimpleTestCase):

@@ -4,7 +4,8 @@
   "description": "Example django+jspm 0.17 project",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev-bundle": "jspm bundle jspm_0_17/main.js staticfiles/SYSTEMJS/bundles/main.js -wid"
   },
   "repository": {
     "type": "git",
@@ -38,7 +39,7 @@
       "jspm": "static/jspm.config.js"
     },
     "devDependencies": {
-      "plugin-babel": "npm:systemjs-plugin-babel@^0.0.9"
+      "plugin-babel": "npm:systemjs-plugin-babel@^0.0.13"
     }
   }
 }

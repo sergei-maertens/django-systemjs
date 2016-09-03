@@ -1,4 +1,14 @@
 SystemJS.config({
+  nodeConfig: {
+    "paths": {
+      "jspm_0_17/": "js/"
+    }
+  },
+  devConfig: {
+    "map": {
+      "plugin-babel": "npm:systemjs-plugin-babel@0.0.13"
+    }
+  },
   transpiler: "plugin-babel",
   packages: {
     "jspm_0_17": {
@@ -18,8 +28,6 @@ SystemJS.config({
     "npm:@*/*.json",
     "npm:*.json"
   ],
-  map: {
-    "plugin-babel": "npm:systemjs-plugin-babel@0.0.9"
-  },
+  map: {},
   packages: {}
 });

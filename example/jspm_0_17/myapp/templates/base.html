@@ -2,10 +2,22 @@
 <html>
 <head>
     <title>Example app</title>
+    <style>
+      html, body {
+        height: 100%;
+      }
+      #map {
+        height: 400px;
+        width: 600px;
+        margin: 1em auto;
+      }
+    </style>
 </head>
 <body>
     <h1>Example app</h1>
     <div id="js-hook"></div>
+
+    <div id="map"></div>
 
     <script src="{% static "jspm_packages/system.js" %}"></script>
     <script src="{% static "jspm.browser.js" %}"></script>

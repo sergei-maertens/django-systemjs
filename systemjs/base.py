@@ -236,6 +236,10 @@ class SystemTracer(object):
 
         for pkg_deptree in app_deps.values():
             for module, info in pkg_deptree.items():
+                # issue #13 - external resources are not included in the bundle,
+                # so don't include them in the depcache either
+                if info.get('skip', False):
+                    continue
                 path = info['path']
                 if path not in all_deps['hashes']:
                     all_deps['hashes'][path] = self.get_hash(path)

@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import os
+import shutil
 import tempfile
 import time
 
@@ -57,6 +58,7 @@ class TracerTests(SimpleTestCase):
                 'name': 'app/dummy.js',
                 'timestamp': int(time.time()),
                 'path': 'app/dummy.js',
+                'skip': False,
             }
         }
         return_value = (json.dumps(trace_result), '')  # no stdout, no stderr
@@ -94,11 +96,13 @@ class TracerFileTests(SimpleTestCase):
                         'name': 'app/dummy.js',
                         'timestamp': self.now,
                         'path': 'app/dummy.js',
+                        'skip': False,
                     },
                     'app/dependency.js': {
                         'name': 'app/dependency.js',
                         'timestamp': self.now,
                         'path': 'app/dependency.js',
+                        'skip': False,
                     }
                 }
             },
@@ -111,6 +115,15 @@ class TracerFileTests(SimpleTestCase):
                 'option2': False,
             }
         }
+
+        def empty_cache_dir():
+            for root, dirs, files in os.walk(settings.SYSTEMJS_CACHE_DIR):
+                for f in files:
+                    os.unlink(os.path.join(root, f))
+                for d in dirs:
+                    shutil.rmtree(os.path.join(root, d))
+
+        self.addCleanup(empty_cache_dir)
 
     @patch('systemjs.base.os.makedirs', return_value=None)
     def test_create_cache_dir(self, mock_makedirs):
@@ -130,11 +143,13 @@ class TracerFileTests(SimpleTestCase):
                 'name': 'app/dummy.js',
                 'timestamp': now,
                 'path': 'app/dummy.js',
+                'skip': False,
             },
             'app/dependency.js': {
                 'name': 'app/dependency.js',
                 'timestamp': now,
                 'path': 'app/dependency.js',
+                'skip': False,
             }
         }
 
@@ -149,9 +164,47 @@ class TracerFileTests(SimpleTestCase):
         tracer.write_depcache(all_deps, {})
         self.assertTrue(os.path.exists(path))
 
+    @patch('systemjs.base.subprocess.Popen')
+    def test_write_deps_external_resource(self, mock):
+        """
+        Issue #13: google maps is scriptLoaded and has no physical file on disk.
+        As such, there is no `info['path']` to read.
+        """
+        now = int(time.time())
+        trace_result = {
+            'app/dummy.js': {
+                'name': 'app/dummy.js',
+                'timestamp': now,
+                'path': 'app/dummy.js',
+                'skip': False,
+            },
+            'google-maps': {
+                'name': 'google-maps',
+                'path': None,
+                'timestamp': None,
+                'skip': True,
+            },
+        }
+
+        return_value = (json.dumps(trace_result), '')  # no stdout, no stderr
+        mock_Popen(mock, return_value=return_value)
+
+        tracer = SystemTracer()
+        all_deps = {'app/dummy': tracer.trace('app/dummy')}
+
+        path = os.path.join(settings.SYSTEMJS_CACHE_DIR, 'deps.json')
+        self.assertFalse(os.path.exists(path))
+        tracer.write_depcache(all_deps, {})
+        self.assertTrue(os.path.exists(path))
+        with open(path) as infile:
+            depcache = json.load(infile)
+        # google maps may not be included
+        self.assertEqual(list(depcache['packages'].keys()), ['app/dummy'])
+
     @patch('systemjs.base.json.load')
     def test_read_deps(self, mock_json_load):
         _file = open(os.path.join(settings.SYSTEMJS_CACHE_DIR, 'deps.json'), 'w')
+        _file.write(json.dumps(self._depcache))
         self.addCleanup(_file.close)
         self.addCleanup(lambda: os.remove(_file.name))
 
@@ -172,11 +225,13 @@ class TracerFileTests(SimpleTestCase):
                 'name': 'app/dummy.js',
                 'timestamp': self.now,
                 'path': 'app/dummy.js',
+                'skip': False,
             },
             'app/dependency.js': {
                 'name': 'app/dependency.js',
                 'timestamp': self.now,
                 'path': 'app/dependency.js',
+                'skip': False,
             }
         })
 
@@ -242,6 +297,7 @@ class TracerFileTests(SimpleTestCase):
                 'name': 'app/dummy.js',
                 'timestamp': self.now,
                 'path': 'app/dummy.js',
+                'skip': False,
             }
         }
         with patch.object(tracer, 'trace', return_value=trace_result1):
@@ -253,11 +309,13 @@ class TracerFileTests(SimpleTestCase):
                 'name': 'app/dummy.js',
                 'timestamp': self.now,
                 'path': 'app/dummy.js',
+                'skip': False,
             },
             'app/another_module.js': {
                 'name': 'app/another_module.js',
                 'timestamp': self.now,
                 'path': 'app/another_module.js',
+                'skip': False,
             }
         }
         with patch.object(tracer, 'trace', return_value=trace_result2):

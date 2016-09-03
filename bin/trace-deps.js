@@ -19,10 +19,12 @@ var builder = new Builder();
 builder.trace(jsapp).then(function(trace) {
     var deps = {}
     for( var jsapp in trace ) {
+        var skip = trace[jsapp] === false; // e.g. with google maps, see #13
         deps[jsapp] = {
             name: jsapp,
-            timestamp: trace[jsapp].timestamp,
-            path: trace[jsapp].path
+            timestamp: skip ? null : trace[jsapp].timestamp,
+            path: skip ? null : trace[jsapp].path,
+            skip: skip
         };
     }
     process.stdout.write(JSON.stringify(deps, null));

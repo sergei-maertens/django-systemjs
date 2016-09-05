@@ -26,6 +26,15 @@ The custom finder looks up files in ``STATIC_ROOT`` directly. It is not needed
 if you use ``django-compressor`` and have ``COMPRESS_ROOT`` set to
 ``STATIC_ROOT`` (which is the default).
 
+If you want to use
+``django.contrib.staticfiles.storage.ManifestStaticFilesStorage`` as
+staticfiles storage backend, you need to use the systemjs-version:
+``systemjs.storage.SystemJSManifestStaticFilesStorage``. This storage ensures
+two things:
+  * during bundling the collected staticfiles (from ``collectstatic``) aren't
+    removed from the manifest file.
+  * during collectstatic the bundled files are kept in the manifest.
+
 There are some :ref:`application settings <available-settings>` to customize
 behaviour. Usually you shouldn't need to change these, since they have sane
 defaults.

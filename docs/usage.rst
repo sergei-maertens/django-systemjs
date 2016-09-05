@@ -103,6 +103,13 @@ Options
   was changed, this can speed up the total bundle time. Comparison happens based
   on mtimes and md5 hashes of the involved files.
 
+  .. note::
+
+    Changes to the source files for the bundles are detected, but changes to jspm
+    config files (``jspm.config.js``, ``jspm.browser.js``) are not included. These
+    files can change relatively frequently, hereby invalidating the depcache when
+    it's not needed. Be careful when making bundle-altering config file changes.
+
   .. versionadded:: 1.4
 
     The first time you use the ``--minimal`` option, you will get an error saying

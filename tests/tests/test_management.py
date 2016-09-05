@@ -419,7 +419,7 @@ class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
             call_command('systemjs_bundle')
 
     @mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
-    def test_templates_option_retain_manifest(self, systemjs_mock, bundle_mock):
+    def test_collectstatic_retain_bundle_manifest(self, systemjs_mock, bundle_mock):
         """
         Issue #13: bundling full, followed by collectstatic, followed by
         bundling a single template removes the bundle entries from the manifest
@@ -467,6 +467,7 @@ class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
                 'app/dummy.js': 'app/dummy.65d75b61cae0.js',
                 'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
                 'dummy2.js': 'dummy2.65d75b61cae0.js',
+                'SYSTEMJS/app/dummy.js': 'SYSTEMJS/app/dummy.5d1dad25dae3.js',
             })
 
             with add_tpl_dir(os.path.join(os.path.dirname(__file__), 'templates2')):

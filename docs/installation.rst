@@ -31,6 +31,7 @@ If you want to use
 staticfiles storage backend, you need to use the systemjs-version:
 ``systemjs.storage.SystemJSManifestStaticFilesStorage``. This storage ensures
 two things:
+
   * during bundling the collected staticfiles (from ``collectstatic``) aren't
     removed from the manifest file.
   * during collectstatic the bundled files are kept in the manifest.

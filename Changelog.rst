@@ -1,6 +1,21 @@
 Changelog
 =========
 
+1.4 (beta)
+----------
+
+* ``--template``, ``-t`` option added to management commands. These limit the
+  templates that are parsed for ``{% systemjs_import ... %}`` tags.
+
+* Added ``--minimal`` option to ``systemjs_bundle`` management command. This will
+  rebundle an app/package only when something has changed in the dependency tree.
+  Usefull when you have many bundles and only a small number changed.
+
+* Added two new management commands:
+
+  - ``systemjs_show_packages``: lists all the packages imported in templates
+  - ``systemjs_write_depcaches``: writes out the dependency tree for each package
+
 1.3.3
 -----
 

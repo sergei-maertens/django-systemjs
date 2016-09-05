@@ -364,6 +364,9 @@ So, setting up jspm:
 jspm init
 ```
 
+Note: in the section below, the order of commands can differ because of different
+jspm beta versions.
+
 This kicks of another interactive terminal session:
 
 ```
@@ -646,6 +649,9 @@ ok   Built into staticfiles/SYSTEMJS/bundles/main.js with source maps,
 ```
 
 It has an (optional) dependency on Facebooks Watchman.
+
+This command can also be added to the `scripts` section in `package.json`, so
+you can shortcut it to `npm run dev-bundle`.
 
 ### Summary
 

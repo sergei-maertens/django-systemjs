@@ -17,6 +17,8 @@ class SystemJSConf(AppConf):
 
     OUTPUT_DIR = 'SYSTEMJS'
 
+    CACHE_DIR = None
+
     PACKAGE_JSON_DIR = getattr(settings, 'BASE_DIR', None)
 
     DEFAULT_JS_EXTENSIONS = True
@@ -31,4 +33,14 @@ class SystemJSConf(AppConf):
                 "but settings.BASE_DIR does not exist. Either set BASE_DIR "
                 "or SYSTEMJS_PACKAGE_JSON_DIR"
             )
+        return os.path.abspath(value)
+
+    def configure_cache_dir(self, value):
+        base_dir = getattr(settings, 'BASE_DIR', None)
+        if not base_dir:
+            raise ImproperlyConfigured(
+                "Tried to set a default cache directory. Either set BASE_DIR "
+                "or SYSTEMJS_CACHE_DIR"
+            )
+        value = os.path.join(base_dir, '_cache', 'systemjs')
         return os.path.abspath(value)

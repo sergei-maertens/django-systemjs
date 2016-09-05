@@ -6,6 +6,7 @@ import mock
 import os
 import shutil
 import tempfile
+import time
 try:  # Py2
     from StringIO import StringIO
 except ImportError:  # Py3
@@ -78,6 +79,33 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         self.err = StringIO()
         self._clear_static()
 
+        self.now = int(time.time())
+
+    def _create_deps_json(self, deps=None, **overrides):
+        deps = deps or {
+            'version': 1,
+            'packages': {
+                'app/dummy': {
+                    'app/dummy.js': {
+                        'name': 'app/dummy.js',
+                        'timestamp': self.now,
+                        'path': 'app/dummy.js',
+                    }
+                }
+            },
+            'hashes': {
+                'app/dummy.js': '65d75b61cae058018d3de1fa433a43da',
+            },
+            'options': {
+                'minimal': True,
+                'sfx': False,
+                'minify': False,
+            }
+        }
+        deps.update(**overrides)
+        with open(os.path.join(settings.SYSTEMJS_CACHE_DIR, 'deps.json'), 'w') as _file:
+            json.dump(deps, _file)
+
     def test_no_arguments(self, bundle_mock):
         """
         Test the correct functioning of calling 'systemjs_bundle' with
@@ -90,7 +118,7 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
 
         self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=False))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy',))
 
     def test_sfx_option(self, bundle_mock):
         bundle_mock.side_effect = _bundle
@@ -100,7 +128,7 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
 
         self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=True, minify=False))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy',))
 
     def test_minify_option(self, bundle_mock):
         bundle_mock.side_effect = _bundle
@@ -110,7 +138,7 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
 
         self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=True))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy',))
 
     @override_settings(TEMPLATES=JINJA_TEMPLATES)
     def test_different_backend(self, bundle_mock):
@@ -122,7 +150,7 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
 
         self.assertEqual(bundle_mock.call_count, 1)  # we only support vanilla templates
         # as opposed to app/dummy2
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=False))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy',))
 
     @override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.CachedStaticFilesStorage')
     def test_post_process(self, bundle_mock):
@@ -153,7 +181,7 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
 
         self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=False))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy',))
 
     def test_templates_option_wrong_tpl(self, bundle_mock):
         bundle_mock.side_effect = _bundle
@@ -178,7 +206,75 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
 
         # one app found in multiple templates -> should only be bundled once
         self.assertEqual(bundle_mock.call_count, 1)
-        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy', force=True, sfx=False, minify=False))
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy'))
+
+    @override_settings(SYSTEMJS_CACHE_DIR=tempfile.mkdtemp())
+    @mock.patch('systemjs.base.SystemTracer.trace')
+    def test_minimal_bundle(self, trace_mock, bundle_mock):
+        """
+        Assert that minimal bundles are generated only if needed
+
+        This is the case where the bundle file does not exist.
+        """
+        trace_mock.return_value = {
+            'app/dummy.js': {
+                'name': 'app/dummy.js',
+                'timestamp': self.now,
+                'path': 'app/dummy.js',
+            }
+        }
+        self._create_deps_json()
+
+        call_command('collectstatic', link=True, interactive=False, stdout=self.out, sterr=self.err)
+        call_command('systemjs_bundle', '--minimal', stdout=self.out, stderr=self.err)
+        # no new bundles should have been created
+        self.assertEqual(bundle_mock.call_count, 1)
+
+    @override_settings(SYSTEMJS_CACHE_DIR=tempfile.mkdtemp())
+    @mock.patch('systemjs.base.SystemTracer.trace')
+    def test_minimal_bundle_initial_exists(self, trace_mock, bundle_mock):
+        """
+        Assert that minimal bundles are generated only if needed
+        """
+        trace_mock.return_value = {
+            'app/dummy.js': {
+                'name': 'app/dummy.js',
+                'timestamp': self.now,
+                'path': 'app/dummy.js',
+            }
+        }
+        self._create_deps_json()
+
+        # put the 'bundle' there
+        dirs = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS', 'app')
+        os.makedirs(dirs)
+        with open(os.path.join(dirs, 'dummy.js'), 'w') as bundle:
+            bundle.write('I am bundle')
+
+        call_command('collectstatic', link=True, interactive=False, stdout=self.out, sterr=self.err)
+        call_command('systemjs_bundle', '--minimal', stdout=self.out, stderr=self.err)
+        # no new bundles should have been created
+        self.assertEqual(bundle_mock.call_count, 0)
+
+    @override_settings(SYSTEMJS_CACHE_DIR=tempfile.mkdtemp())
+    @mock.patch('systemjs.base.SystemTracer.trace')
+    def test_minimal_bundle_different_options(self, trace_mock, bundle_mock):
+        """
+        Assert that minimal bundles are generated only if needed
+        """
+        trace_mock.return_value = {
+            'app/dummy.js': {
+                'name': 'app/dummy.js',
+                'timestamp': self.now,
+                'path': 'app/dummy.js',
+            }
+        }
+        self._create_deps_json()
+
+        call_command('collectstatic', link=True, interactive=False, stdout=self.out, sterr=self.err)
+        call_command('systemjs_bundle', '--minimal', '--sfx', stdout=self.out, stderr=self.err)
+        # no new bundles should have been created
+        self.assertEqual(bundle_mock.call_count, 1)
 
 
 @override_settings(STATIC_ROOT=tempfile.mkdtemp())
@@ -292,23 +388,25 @@ class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
         self.assertEqual(_num_files(base), 0)
 
         call_command('collectstatic', link=True, interactive=False, stdout=self.out, sterr=self.err)
-        # dummy.js + dummy.hash.js + staticfiles.json
-        self.assertEqual(_num_files(base), 3)
+        # dummy.js + dummy.hash.js + staticfiles.json + dependency.js + dependency.hash.js
+        self.assertEqual(_num_files(base), 5)
         with open(os.path.join(base, 'staticfiles.json')) as infile:
             manifest = json.loads(infile.read())
         self.assertEqual(manifest['paths'], {
-            'app/dummy.js': 'app/dummy.65d75b61cae0.js'
+            'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'app/dependency.js': 'app/dependency.d41d8cd98f00.js'
         })
 
         # bundle the files and check that the bundled file is post-processed
         call_command('systemjs_bundle', stdout=self.out, stderr=self.err)
 
         # + bundled file + post-processed file (not staticfiles.json!)
-        self.assertEqual(_num_files(base), 5)
+        self.assertEqual(_num_files(base), 8)
         with open(os.path.join(base, 'staticfiles.json')) as infile:
             manifest = json.loads(infile.read())
         self.assertEqual(manifest['paths'], {
             'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
             'SYSTEMJS/app/dummy.js': 'SYSTEMJS/app/dummy.5d1dad25dae3.js'
         })
 
@@ -319,3 +417,110 @@ class ManifestStorageTests(ClearStaticMixin, SimpleTestCase):
 
         with self.assertRaises(CommandError):
             call_command('systemjs_bundle')
+
+    @mock.patch('systemjs.management.commands.systemjs_bundle.find_systemjs_location')
+    def test_collectstatic_retain_bundle_manifest(self, systemjs_mock, bundle_mock):
+        """
+        Issue #13: bundling full, followed by collectstatic, followed by
+        bundling a single template removes the bundle entries from the manifest
+        (staticfiles.json). This may not happen.
+
+        Reference: https://github.com/sergei-maertens/django-systemjs/issues/13#issuecomment-243968551
+        """
+        bundle_mock.side_effect = _bundle
+        systemjs_mock.return_value = '/non/existant/path/'
+
+        base = os.path.abspath(settings.STATIC_ROOT)
+        self.assertEqual(_num_files(base), 0)
+
+        call_command('collectstatic', interactive=False)
+
+        # dummy.js + dummy.hash.js + staticfiles.json + dependency.js + dependency.hash.js
+        self.assertEqual(_num_files(base), 5)
+        with open(os.path.join(base, 'staticfiles.json')) as infile:
+            manifest = json.loads(infile.read())
+        self.assertEqual(manifest['paths'], {
+            'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
+        })
+
+        # bundle the files and check that the bundled file is post-processed
+        call_command('systemjs_bundle', stdout=self.out, stderr=self.err)
+        # + 2 bundled files + 2 post-processed files (not staticfiles.json!) + systemjs manifest
+        self.assertEqual(_num_files(base), 8)
+        with open(os.path.join(base, 'staticfiles.json')) as infile:
+            manifest = json.loads(infile.read())
+        self.assertEqual(manifest['paths'], {
+            'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
+            'SYSTEMJS/app/dummy.js': 'SYSTEMJS/app/dummy.5d1dad25dae3.js',
+        })
+
+        # wipes the bundles from the manifest without the systemjs manifest mixin
+        with override_settings(STATICFILES_DIRS=[os.path.join(os.path.dirname(__file__), 'static1')]):
+            call_command('collectstatic', interactive=False)
+            self.assertEqual(_num_files(base), 10)
+            with open(os.path.join(base, 'staticfiles.json')) as infile:
+                manifest = json.loads(infile.read())
+
+            self.assertEqual(manifest['paths'], {
+                'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+                'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
+                'dummy2.js': 'dummy2.65d75b61cae0.js',
+                'SYSTEMJS/app/dummy.js': 'SYSTEMJS/app/dummy.5d1dad25dae3.js',
+            })
+
+            with add_tpl_dir(os.path.join(os.path.dirname(__file__), 'templates2')):
+                call_command('systemjs_bundle', '--template', 'extra.html', stdout=self.out, stderr=self.err)
+
+        with open(os.path.join(base, 'staticfiles.json')) as infile:
+            manifest = json.loads(infile.read())
+        self.assertEqual(_num_files(base), 12)
+        self.assertEqual(manifest['paths'], {
+            'app/dummy.js': 'app/dummy.65d75b61cae0.js',
+            'app/dependency.js': 'app/dependency.d41d8cd98f00.js',
+            'dummy2.js': 'dummy2.65d75b61cae0.js',
+            'SYSTEMJS/app/dummy.js': 'SYSTEMJS/app/dummy.5d1dad25dae3.js',
+            'SYSTEMJS/dummy2.js': 'SYSTEMJS/dummy2.5d1dad25dae3.js',
+        })
+
+
+class ShowPackagesTests(SimpleTestCase):
+
+    def test_command(self):
+        """
+        Check that listing the packages works as expected.
+        """
+        stdout = StringIO()
+        stderr = StringIO()
+        call_command('systemjs_show_packages', stdout=stdout, sterr=stderr)
+        stderr.seek(0)
+        stdout.seek(0)
+        self.assertEqual(stderr.read(), '')  # no errors
+        output = stdout.read()
+        self.assertIn('base.html', output)
+        self.assertIn('app/dummy', output)
+
+
+class WriteDepCachesTests(SimpleTestCase):
+
+    @mock.patch('systemjs.base.SystemTracer.write_depcache')
+    @mock.patch('systemjs.base.SystemTracer.trace')
+    def test_command(self, mock_trace, mock_write_depcache):
+        """
+        Check that writing the depcaches works as expected.
+        """
+        mock_trace.return_value = {}
+        stdout = StringIO()
+        stderr = StringIO()
+        call_command('systemjs_write_depcaches', stdout=stdout, sterr=stderr)
+        stderr.seek(0)
+        stdout.seek(0)
+        self.assertEqual(stderr.read(), '')  # no errors
+        self.assertEqual(stdout.read(), '')  # no output either
+
+        mock_trace.assert_called_once_with('app/dummy')
+        mock_write_depcache.assert_called_once_with(
+            {'app/dummy': {}},
+            {'minimal': False, 'sfx': False, 'minify': False}
+        )

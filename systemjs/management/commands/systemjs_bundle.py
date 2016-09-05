@@ -1,32 +1,25 @@
 from __future__ import unicode_literals
 
-import io
 import os
-import re
+import logging
 from collections import OrderedDict
+from copy import copy
 
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.exceptions import SuspiciousFileOperation
-from django.core.management.base import BaseCommand, CommandError
-from django.core.management.utils import handle_extensions
+from django.core.management.base import BaseCommand
 from django.core.files.storage import FileSystemStorage
-from django.template.base import TOKEN_BLOCK
-from django.template import loader, TemplateDoesNotExist
-from django.template.loaders.app_directories import get_app_template_dirs
 
-from systemjs.base import System
-from systemjs.compat import Lexer
+from systemjs.base import System, SystemTracer
 from systemjs.jspm import find_systemjs_location
-from systemjs.templatetags.system_tags import SystemImportNode
+from ._mixins import BundleOptionsMixin, TemplateDiscoveryMixin
 
 
-SYSTEMJS_TAG_RE = re.compile(r"""systemjs_import\s+(['\"])(?P<app>.*)\1""")
-
-RESOLVE_CONTEXT = {}
+logger = logging.getLogger(__name__)
 
 
-class Command(BaseCommand):
+class Command(BundleOptionsMixin, TemplateDiscoveryMixin, BaseCommand):
     help = "Find {% systemjs_import %} tags and bundle the JS apps."
     requires_system_checks = False
 
@@ -38,107 +31,58 @@ class Command(BaseCommand):
             self.stdout.write(msg)
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            '--sfx',
-            action='store_true', dest='sfx',
-            help="Generate self-executing bundles.")
+        super(Command, self).add_arguments(parser)
 
-        parser.add_argument('--minify', action='store_true', help='Let jspm minify the bundle')
-
-        tpl_group = parser.add_mutually_exclusive_group()
-        tpl_group.add_argument(
-            '--extension', '-e', dest='extensions',
-            help='The file extension(s) to examine (default: "html"). Separate '
-                 'multiple extensions with commas, or use -e multiple times.',
-            action='append')
-        tpl_group.add_argument(
-            '--template', '-t', dest='templates',
-            help='The templates to examine. Separate multiple template names with'
-                 'commas, or use -t multiple times',
-            action='append')
-
-        parser.add_argument(
-            '--symlinks', '-s', action='store_true', dest='symlinks',
-            default=False, help='Follows symlinks to directories when examining '
-                                'source code and templates for SystemJS imports.')
         parser.add_argument(
             '--no-post-process',
             action='store_false', dest='post_process', default=True,
             help="Do NOT post process collected files.")
 
-    def discover_templates(self):
-        template_dirs = list(get_app_template_dirs('templates'))
-        for config in settings.TEMPLATES:
-            # only support vanilla Django templates
-            if config['BACKEND'] != 'django.template.backends.django.DjangoTemplates':
-                continue
-            template_dirs += list(config['DIRS'])
-
-        all_files = []
-        for template_dir in template_dirs:
-            for dirpath, dirnames, filenames in os.walk(template_dir, topdown=True, followlinks=self.symlinks):
-                for filename in filenames:
-                    filepath = os.path.join(dirpath, filename)
-                    file_ext = os.path.splitext(filename)[1]
-                    if file_ext not in self.extensions:
-                        continue
-                    all_files.append(filepath)
-
-        return all_files
-
     def handle(self, **options):
-        self.verbosity = 2
-        self.storage = staticfiles_storage
-        self.storage.systemjs_bundling = True  # set flag to check later
-        extensions = options.get('extensions') or ['html']
-        self.symlinks = options.get('symlinks')
+        super(Command, self).handle(**options)
+
         self.post_process = options['post_process']
-        # self.post_processed_files = []
+        self.minimal = options.get('minimal')
 
-        self.extensions = handle_extensions(extensions)
+        self.verbosity = 2
+        self.storage = copy(staticfiles_storage)
+        self.storage.systemjs_bundling = True  # set flag to check later
 
-        # find all template files
-        all_apps = set()
-        if not options.get('templates'):
+        # initialize SystemJS specific objects to process the bundles
+        tracer = SystemTracer(node_path=options.get('node_path'))
+        system_opts = self.get_system_opts(options)
+        system = System(**system_opts)
 
-            all_files = self.discover_templates()
-            for fp in all_files:
-                with io.open(fp, 'r', encoding=settings.FILE_CHARSET) as template_file:
-                    src_data = template_file.read()
+        has_different_options = self.minimal and tracer.get_bundle_options() != system_opts
 
-                for t in Lexer(src_data).tokenize():
-                    if t.token_type == TOKEN_BLOCK:
-                        imatch = SYSTEMJS_TAG_RE.match(t.contents)
-                        if imatch and imatch.group('app') not in all_apps:
-                            all_apps.add(imatch.group('app'))
-        else:
-            for tpl in options.get('templates'):
-                try:
-                    template = loader.get_template(tpl)
-                except TemplateDoesNotExist:
-                    raise CommandError('Template \'%s\' does not exist' % tpl)
-                import_nodes = template.template.nodelist.get_nodes_by_type(SystemImportNode)
-                for node in import_nodes:
-                    app = node.path.resolve(RESOLVE_CONTEXT)
-                    if not app:
-                        self.stdout.write(self.style.WARNING(
-                            '{tpl}: Could not resolve path with context {ctx}, skipping.'.format(
-                                tpl=tpl, ctx=RESOLVE_CONTEXT)
-                        ))
-                        continue
-                    if app not in all_apps:
-                        all_apps.add(app)
+        # discover the apps being imported in the templates
+        all_apps = self.find_apps(templates=options.get('templates'))
+        all_apps = set(sum(all_apps.values(), []))
 
         bundled_files = OrderedDict()
         # FIXME: this should be configurable, if people use S3BotoStorage for example, it needs to end up there
         storage = FileSystemStorage(settings.STATIC_ROOT, base_url=settings.STATIC_URL)
         for app in all_apps:
-            rel_path = System.bundle(app, force=True, sfx=options.get('sfx'), minify=options.get('minify'))
+            # do we need to generate the bundle for this app?
+            if self.minimal and not (has_different_options or tracer.check_needs_update(app)):
+                # check if the bundle actually exists - if it doesn't, don't skip it
+                # this happens on the first ever bundle
+                bundle_path = System.get_bundle_path(app)
+                if self.storage.exists(bundle_path):
+                    self.stdout.write('Checked bundle for app \'{app}\', no changes found'.format(app=app))
+                    continue
+
+            rel_path = system.bundle(app)
             if not self.storage.exists(rel_path):
                 self.stderr.write('Could not bundle {app}'.format(app=app))
             else:
                 self.stdout.write('Bundled {app} into {out}'.format(app=app, out=rel_path))
             bundled_files[rel_path] = (storage, rel_path)
+
+        if self.minimal and bundled_files:
+            self.stdout.write('Generating the new depcache and writing to file...')
+            all_deps = {app: tracer.trace(app) for app in all_apps}
+            tracer.write_depcache(all_deps, system_opts)
 
         if self.post_process and hasattr(self.storage, 'post_process'):
             # post-process system.js if it's within settings.STATIC_ROOT
@@ -160,7 +104,6 @@ class Command(BaseCommand):
                     self.stderr.write("")
                     raise processed
                 if processed:  # pragma: no cover
-                    self.log("Post-processed '%s' as '%s'" %
-                             (original_path, processed_path), level=1)
+                    self.log("Post-processed '%s' as '%s'" % (original_path, processed_path), level=1)
                 else:
                     self.log("Skipped post-processing '%s'" % original_path)  # pragma: no cover

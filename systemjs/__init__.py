@@ -7,7 +7,7 @@ import os
 import subprocess
 
 
-VERSION = (1, 3, 3, 'final', 0)
+VERSION = (1, 4, 0, 'final')
 
 
 default_app_config = 'systemjs.apps.SystemJSConfig'
@@ -45,11 +45,11 @@ def get_main_version(version=None):
 
 
 def get_complete_version(version=None):
-    """Returns a tuple of the django version. If version argument is non-empty,
+    """Returns a tuple of the django-systemjs version. If version argument is non-empty,
     then checks for correctness of the tuple provided.
     """
     if version is None:
-        from django import VERSION as version
+        version = VERSION
     else:
         assert len(version) == 5
         assert version[3] in ('alpha', 'beta', 'rc', 'final')
@@ -66,9 +66,10 @@ def get_git_changeset():
     """
     repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     git_log = subprocess.Popen(
-            'git log --pretty=format:%ct --quiet -1 HEAD',
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            shell=True, cwd=repo_dir, universal_newlines=True)
+        'git log --pretty=format:%ct --quiet -1 HEAD',
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        shell=True, cwd=repo_dir, universal_newlines=True
+    )
     timestamp = git_log.communicate()[0]
     try:
         timestamp = datetime.datetime.utcfromtimestamp(int(timestamp))

@@ -1,8 +1,8 @@
 Changelog
 =========
 
-1.4 (beta)
-----------
+1.4
+---
 
 * ``--template``, ``-t`` option added to management commands. These limit the
   templates that are parsed for ``{% systemjs_import ... %}`` tags.

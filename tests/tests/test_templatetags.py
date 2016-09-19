@@ -35,9 +35,6 @@ class TemplateTagTests(SimpleTestCase):
         with self.assertRaises(TemplateSyntaxError):
             django_engine.from_string("""{% load system_tags %}{% systemjs_import %}""")
 
-        with self.assertRaises(TemplateSyntaxError):
-            django_engine.from_string("""{% load system_tags %}{% systemjs_import 'foo' 'bar' %}""")
-
     @override_settings(SYSTEMJS_ENABLED=False, SYSTEMJS_DEFAULT_JS_EXTENSIONS=False)
     def test_debug_module_without_extension_no_default(self):
         rendered = self._render()
@@ -58,11 +55,11 @@ class TemplateTagTests(SimpleTestCase):
 
     @override_settings(SYSTEMJS_ENABLED=True, SYSTEMJS_OUTPUT_DIR='SJ')
     def test_script_tag_attributes(self):
-        template = """{% load system_tags %}{% systemjs_import 'myapp/main' async %}"""
+        template = """{% load system_tags %}{% systemjs_import 'myapp/main' async foo="bar" %}"""
         template = django_engine.from_string(template)
         rendered = template.render(self.context)
         expected_url = urljoin(settings.STATIC_URL, 'SJ/myapp/main.js')
         self.assertHTMLEqual(
             rendered,
-            """<script async type="text/javascript" src="{0}"></script>""".format(expected_url)
+            """<script async foo="bar" type="text/javascript" src="{0}"></script>""".format(expected_url)
         )

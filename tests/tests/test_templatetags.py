@@ -55,3 +55,14 @@ class TemplateTagTests(SimpleTestCase):
         self.template = django_engine.from_string("""{% load system_tags %}{% systemjs_import 'myapp/main.js' %}""")
         rendered = self._render()
         self.assertEqual(rendered, """<script type="text/javascript">System.import('myapp/main.js');</script>""")
+
+    @override_settings(SYSTEMJS_ENABLED=True, SYSTEMJS_OUTPUT_DIR='SJ')
+    def test_script_tag_attributes(self):
+        template = """{% load system_tags %}{% systemjs_import 'myapp/main' async %}"""
+        template = django_engine.from_string(template)
+        rendered = template.render(self.context)
+        expected_url = urljoin(settings.STATIC_URL, 'SJ/myapp/main.js')
+        self.assertHTMLEqual(
+            rendered,
+            """<script async type="text/javascript" src="{0}"></script>""".format(expected_url)
+        )

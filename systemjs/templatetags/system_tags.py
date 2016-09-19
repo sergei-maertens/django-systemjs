@@ -1,20 +1,28 @@
 from __future__ import unicode_literals
 
 import posixpath
+import re
 
 from django import template
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
+from django.forms.utils import flatatt
+from django.template.base import token_kwargs
 
 from systemjs.base import System
 
 register = template.Library()
 
 
+# Regex for token keyword arguments
+kwarg_re = re.compile(r"(?:(\w+)=)?(.+)")
+
+
 class SystemImportNode(template.Node):
 
-    def __init__(self, path):
+    def __init__(self, path, tag_attrs=None):
         self.path = path
+        self.tag_attrs = tag_attrs
 
     def render(self, context):
         """
@@ -32,19 +40,36 @@ class SystemImportNode(template.Node):
         # else: create a bundle
         rel_path = System.get_bundle_path(module_path)
         url = staticfiles_storage.url(rel_path)
-        return """<script type="text/javascript" src="{url}"></script>""".format(url=url)
+
+        tag_attrs = {'type': 'text/javascript'}
+        for key, value in self.tag_attrs.items():
+            if not isinstance(value, bool):
+                value = value.resolve(context)
+            tag_attrs[key] = value
+
+        return """<script{attrs} src="{url}"></script>""".format(
+            url=url, attrs=flatatt(tag_attrs)
+        )
 
     @classmethod
     def handle_token(cls, parser, token):
         bits = token.split_contents()
+        attrs = {}
 
-        if len(bits) != 2:
-            raise template.TemplateSyntaxError(
-                "'%s' takes at least one argument (js module, without extension)" % bits[0])
+        if len(bits) < 2:
+            raise template.TemplateSyntaxError("'%s' takes at least one argument (js module)" % bits[0])
 
-        # for 'as varname' support, check django.templatetags.static
+        if len(bits) > 2:
+            for bit in bits[2:]:
+                # First we try to extract a potential kwarg from the bit
+                kwarg = token_kwargs([bit], parser)
+                if kwarg:
+                    attrs.update(kwarg)
+                else:
+                    attrs[bit] = True  # for flatatt
+
         path = parser.compile_filter(bits[1])
-        return cls(path)
+        return cls(path, tag_attrs=attrs)
 
 
 @register.tag

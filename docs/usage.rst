@@ -55,6 +55,21 @@ use the ``CachedStaticFilesStorage``, you will get the hashed path:
   aren't removed from the manifest file.
 
 
+The tag accepts any number of (custom) attributes you may want to add, making it
+possible to load scripts async, or specify html ids for example.
+
+.. code-block:: django
+
+    {% load system_tags %}
+    {% systemjs_import 'my/awesome/app.js' async id="my-awesome-app" %}
+
+this will output (in production mode)
+
+.. code-block:: html
+
+    <script type="text/javascript" async id="my-awesome-app" src="/static/SYSTEMJS/my/awesome/app.12ab459edf22.js"></script>
+
+
 Management commands
 ===================
 

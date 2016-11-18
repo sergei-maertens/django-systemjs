@@ -104,10 +104,14 @@ class SystemBundle(object):
         options.setdefault('jspm', settings.SYSTEMJS_JSPM_EXECUTABLE)
         self.opts = options
 
-        bundle_cmd = 'bundle-sfx' if self.opts.get('sfx') else 'bundle'
+        bundle_cmd = self.get_bundle_sfx_cmd() if self.opts.get('sfx') else 'bundle'
         self.command = '{jspm} ' + bundle_cmd + ' {app} {outfile}'
 
         self.stdout = self.stdin = self.stderr = subprocess.PIPE
+
+    def get_bundle_sfx_cmd(self):
+        spec = semantic_version.Spec('>=0.17.0')
+        return 'build' if self.system.jspm_version in spec else 'bundle-sfx'
 
     def get_outfile(self):
         js_file = '{app}{ext}'.format(app=self.app, ext='.js' if self.needs_ext() else '')

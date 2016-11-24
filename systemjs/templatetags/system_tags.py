@@ -34,8 +34,12 @@ class SystemImportNode(template.Node):
                 name, ext = posixpath.splitext(module_path)
                 if not ext:
                     module_path = '{}.js'.format(module_path)
-            tpl = """<script type="text/javascript">System.import('{app}');</script>"""
-            return tpl.format(app=module_path)
+
+            if settings.SYSTEMJS_SERVER_URL:
+                tpl = """<script src="{url}{app}" type="text/javascript"></script>"""
+            else:
+                tpl = """<script type="text/javascript">System.import('{app}');</script>"""
+            return tpl.format(app=module_path, url=settings.SYSTEMJS_SERVER_URL)
 
         # else: create a bundle
         rel_path = System.get_bundle_path(module_path)

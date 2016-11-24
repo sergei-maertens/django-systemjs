@@ -63,3 +63,11 @@ class TemplateTagTests(SimpleTestCase):
             rendered,
             """<script async foo="bar" type="text/javascript" src="{0}"></script>""".format(expected_url)
         )
+
+    @override_settings(SYSTEMJS_ENABLED=False, SYSTEMJS_SERVER_URL='http://localhost:3000/assets/')
+    def test_external_server(self):
+        rendered = self._render()
+        self.assertHTMLEqual(
+            rendered,
+            """<script type="text/javascript" src="http://localhost:3000/assets/myapp/main.js"></script>"""
+        )

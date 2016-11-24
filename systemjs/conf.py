@@ -23,6 +23,8 @@ class SystemJSConf(AppConf):
 
     DEFAULT_JS_EXTENSIONS = True
 
+    SERVER_URL = None
+
     class Meta:
         prefix = 'systemjs'
 

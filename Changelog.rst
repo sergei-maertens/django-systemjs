@@ -1,5 +1,8 @@
 Changelog
 =========
+1.4.2
+-----
+* Added a fix for the ``--sfx`` option on jspm 0.17 (thanks @funn)
 
 1.4
 ---

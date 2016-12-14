@@ -1,22 +1,12 @@
 """
 Taken from djangoproject/django docs.
-"""
 
-"""
 Sphinx plugins for Django documentation.
 """
-import json
-import os
 import re
 
-from docutils import nodes
-from docutils.parsers.rst import directives
 from sphinx import addnodes
-from sphinx.builders.html import StandaloneHTMLBuilder
-from sphinx.domains.std import Cmdoption
 from sphinx.util.compat import Directive
-from sphinx.util.console import bold
-from sphinx.util.nodes import set_source_info
 from sphinx.writers.html import SmartyPantsHTMLTranslator
 
 # RE for option descriptions without a '--' prefix
@@ -27,6 +17,7 @@ simple_option_desc_re = re.compile(
 def setup(app):
     app.add_directive('versionadded', VersionDirective)
     app.add_directive('versionchanged', VersionDirective)
+    app.set_translator('djangohtml', DjangoHTMLTranslator)
     return {'parallel_read_safe': True}
 
 

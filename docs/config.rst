@@ -22,8 +22,12 @@ shell if you need to set it yourself.
 for imports was optional. This is being phased out, and matches the
 ``defaultJSExtensions`` settings in ``config.js``.
 
-``CACHE_DIR``: directory to keep the dependency cache (when generating
+``SYSTEMJS_CACHE_DIR``: directory to keep the dependency cache (when generating
 :ref:`minimal <minimal>` bundles)
+
+``SYSTEMJS_SERVER_URL``: if you're using a frontend asset-server and want to use
+that instead of letting Django serve the modules, specify the url with this
+settings. Defaults to ``None``. Example: ``http://localhost:3000/assets/``.
 
 
 Environment variables

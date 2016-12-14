@@ -159,9 +159,6 @@ todo_include_todos = False
 # typographically correct entities.
 html_use_smartypants = True
 
-# HTML translator class for the builder
-html_translator_class = "djangodocs.DjangoHTMLTranslator"
-
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
 

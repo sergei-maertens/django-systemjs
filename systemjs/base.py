@@ -96,6 +96,7 @@ class SystemBundle(object):
                    for jspm >= 0.16.3
             `minify`: boolean, whether go generate minified bundles or not
             `sfx`: boolean, generate a self-executing bundle or not
+            `skip-source-maps: boolean, whether to generate source maps or not
         """
         self.system = system
         self.app = app
@@ -149,6 +150,9 @@ class SystemBundle(object):
 
         if options.get('minify'):
             self.command += ' --minify'
+
+        if options.get('skip_source_maps'):
+            self.command += ' --skip-source-maps'
 
         try:
             cmd = self.command.format(app=self.app, outfile=outfile, **options)

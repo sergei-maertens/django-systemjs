@@ -148,9 +148,6 @@ class BundleTests(SimpleTestCase):
         self.assertEqual(command,
                          'jspm bundle app/dummy {0} --skip-source-maps'.format(outfile))
 
-        mapfile = os.path.join(settings.STATIC_ROOT,
-                               'SYSTEMJS/{0}.js.map'.format(app_name))
-        self.assertFalse(os.path.isfile(mapfile))
         outfile = os.path.join(settings.STATIC_ROOT,
                                'SYSTEMJS/{0}.js'.format(app_name))
         with open(outfile, 'r') as of:

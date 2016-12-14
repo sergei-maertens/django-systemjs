@@ -1,5 +1,14 @@
 Changelog
 =========
+
+1.4.3
+-----
+
+Added the ``--skip-source-maps`` option to the bundle command. (by `@funn`_)
+
+.. _@funn: https://github.com/funn
+
+
 1.4.2
 -----
 * Added a fix for the ``--sfx`` option on jspm 0.17 (thanks @funn)

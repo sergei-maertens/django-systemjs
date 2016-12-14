@@ -125,6 +125,38 @@ class BundleTests(SimpleTestCase):
         self.assertEqual(process_mock.communicate.call_count, 1)
 
     @mock.patch('subprocess.Popen')
+    def test_bundle_skip_source_maps_suprocess(self, mock_subproc_popen):
+        """
+        Test that bundling calls the correct subprocess command
+        """
+
+        app_name = 'app/dummy'
+
+        def side_effect(*args, **kwargs):
+            _bundle(app_name)
+            return ('output', 'error')
+
+        # mock Popen/communicate
+        process_mock = mock_Popen(mock_subproc_popen, side_effect=side_effect)
+
+        # Bundle app/dummy
+        system = System(skip_source_maps=True)
+        system.bundle('app/dummy')
+        self.assertEqual(mock_subproc_popen.call_count, 1)
+        command = mock_subproc_popen.call_args[0][0]
+        outfile = os.path.join(settings.STATIC_ROOT, 'SYSTEMJS/app/dummy.js')
+        self.assertEqual(command,
+                         'jspm bundle app/dummy {0} --skip-source-maps'.format(outfile))
+
+        outfile = os.path.join(settings.STATIC_ROOT,
+                               'SYSTEMJS/{0}.js'.format(app_name))
+        with open(outfile, 'r') as of:
+            js = of.read()
+        self.assertEqual(js, "alert('foo')\nSystem.import('app/dummy.js');\n")
+
+        self.assertEqual(process_mock.communicate.call_count, 1)
+
+    @mock.patch('subprocess.Popen')
     def test_oserror_caught(self, mock):
         def oserror():
             raise OSError('Error')

@@ -100,6 +100,7 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
                 'minimal': True,
                 'sfx': False,
                 'minify': False,
+                'skip_source_maps': False
             }
         }
         deps.update(**overrides)
@@ -135,6 +136,16 @@ class ManagementCommandTests(MockFindSystemJSLocation, ClearStaticMixin, SimpleT
 
         self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
         call_command('systemjs_bundle', '--minify', stdout=self.out, stderr=self.err)
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
+
+        self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
+        self.assertEqual(bundle_mock.call_args, mock.call('app/dummy',))
+
+    def test_skip_source_maps_option(self, bundle_mock):
+        bundle_mock.side_effect = _bundle
+
+        self.assertEqual(_num_files(settings.STATIC_ROOT), 0)
+        call_command('systemjs_bundle', '--skip-source-maps', stdout=self.out, stderr=self.err)
         self.assertEqual(_num_files(settings.STATIC_ROOT), 1)
 
         self.assertEqual(bundle_mock.call_count, 1)  # only one app should be found
@@ -522,5 +533,5 @@ class WriteDepCachesTests(SimpleTestCase):
         mock_trace.assert_called_once_with('app/dummy')
         mock_write_depcache.assert_called_once_with(
             {'app/dummy': {}},
-            {'minimal': False, 'sfx': False, 'minify': False}
+            {'minimal': False, 'sfx': False, 'minify': False, 'skip_source_maps': False}
         )

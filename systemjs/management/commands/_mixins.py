@@ -131,7 +131,8 @@ class BundleOptionsMixin(object):
         parser.add_argument('--node-path', help='Path to the project `node_modules` directory')
         parser.add_argument('--minify', action='store_true', help='Let jspm minify the bundle')
         parser.add_argument('--minimal', action='store_true', help='Only (re)bundle if changes detected')
+        parser.add_argument('--skip-source-maps', action='store_true', help='Skip source maps generation')
 
     def get_system_opts(self, options):
-        system_options = ['minimal', 'minify', 'sfx']
+        system_options = ['minimal', 'minify', 'sfx', 'skip_source_maps']
         return {opt: options.get(opt) for opt in system_options}
